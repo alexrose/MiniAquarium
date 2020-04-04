@@ -1,9 +1,8 @@
 #include <Arduino.h>
 
-/** Define used pins */
-#define AirPump 5;
-#define WaterPump 6;
-#define TemperatureSensor 7;
+#define AIR_PUMP 10
+#define FILTER_PUMP 11
+#define TEMP_SENSOR 7
 
 String getValue(String data, char separator, int index)
 {
@@ -22,20 +21,52 @@ String getValue(String data, char separator, int index)
   return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
+int getPinNumber(String pin)
+{
+  if (pin == "air") {
+    return AIR_PUMP;
+  } else {
+    return FILTER_PUMP;
+  }
+}
+
+int getPinState(String pinState)
+{
+  if (pinState == "on") {
+    return HIGH;
+  } else {
+    return LOW;
+  }
+}
+
 void parseReceivedSerialData(String inData)
 {
   if (inData.indexOf("fishcam:") >= 0) {
-    String pin = getValue(inData, ':', 1);
-    String state = getValue(inData, ':', 2);
-    digitalWrite(pin.toInt(), state.toInt());
+    Serial.print("I received: ");
+    Serial.println(inData);
+
+    int pin = getPinNumber(getValue(inData, ':', 1));
+    int state = getPinState(getValue(inData, ':', 2));
+    
+    Serial.print("PIN -- STATE: ");
+    Serial.print(pin);
+    Serial.print("--");
+    Serial.println(state);
+
+    digitalWrite(pin, state);
   }
 }
+
 
 void setup() {
   Serial.begin(115200);
 
-  pinMode(13, OUTPUT);
-  digitalWrite(13, HIGH);
+  pinMode(AIR_PUMP, OUTPUT);
+  pinMode(FILTER_PUMP, OUTPUT);
+  pinMode(TEMP_SENSOR, INPUT);
+
+  digitalWrite(AIR_PUMP, HIGH);
+  digitalWrite(FILTER_PUMP, HIGH);
 }
 
 void loop() {

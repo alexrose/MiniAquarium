@@ -1,6 +1,6 @@
 **Mini Aquarium**
 
-***Hardware used ***
+**Hardware used **
 - Arduino Uno
 - ESP32 Cam - Ai Thinker
 - 2 Relay module (tongling - jqc-3ff-s-z)
@@ -16,3 +16,5 @@
 - Resistor 0.25W 220Ω
 
 
+**Instructions**
+- Rename "userconfig.app" (within "FishCamera/src/") to "userconfig.h" and update accordingly
