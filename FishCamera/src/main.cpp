@@ -15,7 +15,9 @@
 #include <esp32cam.h>
 #include <WebServer.h>
 #include <WiFi.h>
-#include <credentials.h>
+#include <userconfig.h>
+#include <WS2812FX.h>
+#include "ESP32_RMT_Driver.h"
 
 /** WiFi credentials */
 userConfig::WiFi wifiData;
@@ -26,6 +28,18 @@ WebServer server(80);
 
 static auto loRes = esp32cam::Resolution::find(320, 240);
 static auto hiRes = esp32cam::Resolution::find(640, 480);
+
+/** Leds setup */
+WS2812FX ledsBar = WS2812FX(8, 12, NEO_GRB  + NEO_KHZ800);
+
+/** Custom show functions which will use the RMT hardware to drive the LEDs. */
+void ledsBarShow(void) {
+  uint8_t *pixels = ledsBar.getPixels();
+  // numBytes is one more then the size of the ws2812fx's *pixels array.
+  // the extra byte is used by the driver to insert the LED reset pulse at the end.
+  uint16_t numBytes = ledsBar.getNumBytes() + 1;
+  rmt_write_sample(RMT_CHANNEL_0, pixels, numBytes, false);
+}
 
 void handleJpgHi()
 {
@@ -63,10 +77,10 @@ void handleMjpeg()
 /** Html template */
 String serveHtml(String type)
 {
-  String mediaSrc = (type == "image") ? "/image.jpg" : "/stream.mjpeg";
-  String buttonSrc = (type == "image") ? "/" : "/image";
-  String buttonVal = (type == "image") ? "Home" : "Image";
-  String buttonHome = (type != "default" && type != "image") ? "<button onclick='window.stop();window.location=\"/\";'>Home</button>" : "";
+  String mediaSrc = (type == "video") ? "/stream.mjpeg" : "/image.jpg";
+  String buttonSrc = (type == "video") ? "/" : "/video";
+  String buttonVal = (type == "video") ? "Home" : "Video";
+  String buttonHome = (type != "default" && type != "video") ? "<button onclick='window.stop();window.location=\"/\";'>Home</button>" : "";
 
   String html = "<!DOCTYPE HTML><html>"\
 "<head>"\
@@ -103,39 +117,51 @@ String serveHtml(String type)
   return html;
 }
 
-/** Web page: render video(default) */
+/** Web page: render image(default) */
 void handleDefaultPage()
 {
   server.send(200, "text/html", serveHtml("default"));
 }
 
 /** Web page: render image */
-void handleImagePage()
+void handleVideoPage()
 {
-  server.send(200, "text/html", serveHtml("image"));
+  server.send(200, "text/html", serveHtml("video"));
 }
 
 /** Web page: turn on lights(warn) & render video */
 void handleWarmLight()
 {
+  ledsBar.stop();
+  ledsBar.setSegment(0, 0, 8-1, FX_MODE_STATIC, 0xfafa49, 1000, NO_OPTIONS);
+  ledsBar.start();
   server.send(200, "text/html", serveHtml("warm-light"));
 }
 
 /** Web page: turn on lights(cold) & render video */
 void handleColdLight()
 {
+  ledsBar.stop();
+  ledsBar.setSegment(0, 0, 8-1, FX_MODE_STATIC, WHITE, 1000, NO_OPTIONS);
+  ledsBar.start();
+
   server.send(200, "text/html", serveHtml("cold-light"));
 }
 
 /** Web page: turn on lights(party) & render video */
 void handlePartyLight()
 {
+  ledsBar.stop();
+  ledsBar.setSegment(0, 0, 8-1, FX_MODE_RAINBOW_CYCLE, BLUE, 512, NO_OPTIONS);
+  ledsBar.start();
+
   server.send(200, "text/html", serveHtml("party-light"));
 }
 
 /** Web page: turn onf lights & render video */
 void handleLightOff()
 {
+  ledsBar.stop();
   server.send(200, "text/html", serveHtml("light-off"));
 }
 
@@ -183,10 +209,19 @@ void handleFilterOff()
   server.send(200, "text/html", serveHtml("filter-off"));
 }
 
+
 void setup()
 {
   Serial.begin(115200);
   Serial.setDebugOutput(0);
+
+  /** leds bar setup */
+  ledsBar.init(); 
+  ledsBar.setBrightness(64);
+  rmt_tx_int(RMT_CHANNEL_0, ledsBar.getPin());
+
+  ledsBar.setCustomShow(ledsBarShow);
+  ledsBar.stop();
 
   {
     using namespace esp32cam;
@@ -214,7 +249,7 @@ void setup()
   Serial.println(WiFi.localIP());
 
   server.on("/", handleDefaultPage);
-  server.on("/image", handleImagePage);
+  server.on("/video", handleVideoPage);
   server.on("/warm-light", handleWarmLight);
   server.on("/cold-light", handleColdLight);
   server.on("/party-light", handlePartyLight);
@@ -234,4 +269,6 @@ void setup()
 void loop()
 {
   server.handleClient();
+  ledsBar.service(); 
 }
+

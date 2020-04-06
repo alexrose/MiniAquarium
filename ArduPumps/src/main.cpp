@@ -1,8 +1,7 @@
 #include <Arduino.h>
 
-#define AIR_PUMP 10
-#define FILTER_PUMP 11
-#define TEMP_SENSOR 7
+#define AIR_PUMP 5
+#define FILTER_PUMP 6
 
 String getValue(String data, char separator, int index)
 {
@@ -42,28 +41,18 @@ int getPinState(String pinState)
 void parseReceivedSerialData(String inData)
 {
   if (inData.indexOf("fishcam:") >= 0) {
-    Serial.print("I received: ");
-    Serial.println(inData);
-
     int pin = getPinNumber(getValue(inData, ':', 1));
     int state = getPinState(getValue(inData, ':', 2));
-    
-    Serial.print("PIN -- STATE: ");
-    Serial.print(pin);
-    Serial.print("--");
-    Serial.println(state);
 
     digitalWrite(pin, state);
   }
 }
-
 
 void setup() {
   Serial.begin(115200);
 
   pinMode(AIR_PUMP, OUTPUT);
   pinMode(FILTER_PUMP, OUTPUT);
-  pinMode(TEMP_SENSOR, INPUT);
 
   digitalWrite(AIR_PUMP, HIGH);
   digitalWrite(FILTER_PUMP, HIGH);
