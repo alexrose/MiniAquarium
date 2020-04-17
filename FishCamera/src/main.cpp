@@ -12,36 +12,43 @@
  * Board "AI Thinker ESP32-CAM"
  */
 
-#include <esp32cam.h>
-#include <WebServer.h>
 #include <WiFi.h>
-#include <userconfig.h>
+#include <esp32cam.h>
 #include <WS2812FX.h>
-#include "ESP32_RMT_Driver.h"
+#include <WebServer.h>
+#include <UserConfig.h>
+#include <ArduinoJson.h>
+#include <ESP32_RMT_Driver.h>
+
+#define DATA_LED 12
+#define PIN_LED 2
+#define PIN_AIR 13
+#define PIN_FILTER 14
 
 /** WiFi credentials */
-userConfig::WiFi wifiData;
-const char* WIFI_SSID = wifiData.ssid;
-const char* WIFI_PASS = wifiData.pass;
+UserConfig::ConfigData configData;
+const char* WIFI_SSID = configData.ssid;
+const char* WIFI_PASS = configData.pass;
 
-WebServer server(80);
+WebServer server(configData.serverPort);
 
 static auto loRes = esp32cam::Resolution::find(320, 240);
 static auto hiRes = esp32cam::Resolution::find(640, 480);
 
 /** Leds setup */
-WS2812FX ledsBar = WS2812FX(8, 12, NEO_GRB  + NEO_KHZ800);
+int ledsNo = 8;
+int ledStart = 0;
+int ledStop = 7;
+WS2812FX ledsBar = WS2812FX(ledsNo, DATA_LED, NEO_GRB  + NEO_KHZ800);
 
 /** Custom show functions which will use the RMT hardware to drive the LEDs. */
 void ledsBarShow(void) {
   uint8_t *pixels = ledsBar.getPixels();
-  // numBytes is one more then the size of the ws2812fx's *pixels array.
-  // the extra byte is used by the driver to insert the LED reset pulse at the end.
   uint16_t numBytes = ledsBar.getNumBytes() + 1;
   rmt_write_sample(RMT_CHANNEL_0, pixels, numBytes, false);
 }
 
-void handleJpgHi()
+void handleJpeg()
 {
   if (!esp32cam::Camera.changeResolution(hiRes)) {
     Serial.println("High resolution failed.");
@@ -74,95 +81,78 @@ void handleMjpeg()
   }
 }
 
-/** Html template */
-String serveHtml(String type)
+String getStatus(String message) 
 {
-  String mediaSrc = (type == "video") ? "/stream.mjpeg" : "/image.jpg";
-  String buttonSrc = (type == "video") ? "/" : "/video";
-  String buttonVal = (type == "video") ? "Home" : "Video";
-  String buttonHome = (type != "default" && type != "video") ? "<button onclick='window.stop();window.location=\"/\";'>Home</button>" : "";
+  String jsonString;
+  StaticJsonDocument<1024> data;
 
-  String html = "<!DOCTYPE HTML><html>"\
-"<head>"\
-"  <meta name='viewport' content='width=device-width, initial-scale=1'>"\
-"  <style>"\
-"    body { text-align:center; }"\
-"  </style>"\
-"</head>"\
-"<body>"\
-"  <div id='container'>"\
-"    <h2>FishCam</h2>"\
-"    <p>"\
-+buttonHome+\
-"      <button onclick='window.stop();window.location=\""+buttonSrc+"\";'>"+buttonVal+"</button>"\
-"      <button onclick='window.stop();window.location=\"/warm-light\";'>Warm light</button>"\
-"      <button onclick='window.stop();window.location=\"/cold-light\";'>Cold light</button>"\
-"      <button onclick='window.stop();window.location=\"/party-light\";'>Party light</button>"\
-"      <button onclick='window.stop();window.location=\"/light-off\";'>Light off</button>"\
-"      <button onclick='window.stop();location.reload();'>Refresh</button>"\
-"    </p>"\
-"  </div>"\
-"  <div>"\
-"    <img style='max-width:100%;' src='"+mediaSrc+"'>"\
-"  </div>"\
-"    <p>"\
-"      <button onclick='window.stop();window.location=\"/air-on\";'>Air on</button>"\
-"      <button onclick='window.stop();window.location=\"/air-off\";'>Air off</button>"\
-"      <button onclick='window.stop();window.location=\"/filter-on\";'>Filter on</button>"\
-"      <button onclick='window.stop();window.location=\"/filter-off\";'>Filter off</button>"\
-"    </p>"\
-"</body>"\
-"</html>";
-
-  return html;
+  data["air"] = digitalRead(PIN_AIR);
+  data["light"] = digitalRead(PIN_LED);
+  data["filter"] = digitalRead(PIN_FILTER);
+  data["status"] = "success";
+  data["message"] = message;
+  data["url"]["base"] = String(configData.server);
+  data["url"]["image"] = "/image.jpg";
+  data["url"]["video"] = "/stream.mjpeg";
+  data["url"]["air-on"] = "/air-on";
+  data["url"]["air-off"] = "/air-off";
+  data["url"]["filter-on"] = "/filter-on";
+  data["url"]["filter-off"] = "/filter-off";
+  data["url"]["warm-light"] = "/warm-on";
+  data["url"]["cold-light"] = "/cold-on";
+  data["url"]["party-light"] = "/party-on";
+  data["url"]["light-off"] = "/light-off";
+  
+  serializeJson(data, jsonString);
+  return jsonString;
 }
 
 /** Web page: render image(default) */
 void handleDefaultPage()
 {
-  server.send(200, "text/html", serveHtml("default"));
-}
-
-/** Web page: render image */
-void handleVideoPage()
-{
-  server.send(200, "text/html", serveHtml("video"));
+  server.send(200, "application/json", getStatus(""));
 }
 
 /** Web page: turn on lights(warn) & render video */
 void handleWarmLight()
 {
   ledsBar.stop();
-  ledsBar.setSegment(0, 0, 8-1, FX_MODE_STATIC, 0xfafa49, 1000, NO_OPTIONS);
+  ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, 0xfafa49, 1000, NO_OPTIONS);
   ledsBar.start();
-  server.send(200, "text/html", serveHtml("warm-light"));
+
+  digitalWrite(PIN_LED, HIGH);
+  server.send(200, "application/json", getStatus("Warm light is on."));
 }
 
 /** Web page: turn on lights(cold) & render video */
 void handleColdLight()
 {
   ledsBar.stop();
-  ledsBar.setSegment(0, 0, 8-1, FX_MODE_STATIC, WHITE, 1000, NO_OPTIONS);
+  ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, WHITE, 1000, NO_OPTIONS);
   ledsBar.start();
 
-  server.send(200, "text/html", serveHtml("cold-light"));
+  digitalWrite(PIN_LED, HIGH);
+  server.send(200, "application/json", getStatus("Cold light is on."));
 }
 
 /** Web page: turn on lights(party) & render video */
 void handlePartyLight()
 {
   ledsBar.stop();
-  ledsBar.setSegment(0, 0, 8-1, FX_MODE_RAINBOW_CYCLE, BLUE, 512, NO_OPTIONS);
+  ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_RAINBOW_CYCLE, BLUE, 512, NO_OPTIONS);
   ledsBar.start();
 
-  server.send(200, "text/html", serveHtml("party-light"));
+  digitalWrite(PIN_LED, HIGH);
+  server.send(200, "application/json", getStatus("Party lights are on."));
 }
 
 /** Web page: turn onf lights & render video */
 void handleLightOff()
 {
   ledsBar.stop();
-  server.send(200, "text/html", serveHtml("light-off"));
+  
+  digitalWrite(PIN_LED, LOW);
+  server.send(200, "application/json", getStatus("Lights are off."));
 }
 
 /** Web page: turn air pump on & render video */
@@ -173,7 +163,8 @@ void handleAirOn()
     break;
   }
   
-  server.send(200, "text/html", serveHtml("air-on"));
+  digitalWrite(PIN_AIR, HIGH);
+  server.send(200, "application/json", getStatus("Air pump is on."));
 }
 
 /** Web page: turn air pump off & render video */
@@ -184,7 +175,8 @@ void handleAirOff()
     break;
   }
 
-  server.send(200, "text/html", serveHtml("air-off"));
+  digitalWrite(PIN_AIR, LOW);
+  server.send(200, "application/json", getStatus("Air pump is off."));
 }
 
 /** Web page: turn water filter on & render video */
@@ -195,29 +187,47 @@ void handleFilterOn()
     break;
   }
 
-  server.send(200, "text/html", serveHtml("filter-on")); 
+  digitalWrite(PIN_FILTER, HIGH);
+  server.send(200, "application/json", getStatus("Filter pump is on."));
 }
 
 /** Web page: turn water filter off & render video */
 void handleFilterOff()
 {
+  
   while(Serial.availableForWrite()) {
     Serial.write("fishcam:filter:off"); 
     break;
   }
 
-  server.send(200, "text/html", serveHtml("filter-off"));
+  digitalWrite(PIN_FILTER, LOW);
+  server.send(200, "application/json", getStatus("Filter pump is off."));
 }
 
+void handleNotFound()
+{
+  String jsonString;
+  StaticJsonDocument<128> data;
+
+  data["status"] = "error";
+  data["message"] = "404 - action not found.";
+  
+  serializeJson(data, jsonString);
+  server.send(404, "application/json", jsonString);
+}
 
 void setup()
 {
   Serial.begin(115200);
   Serial.setDebugOutput(0);
 
-  /** leds bar setup */
+  pinMode(PIN_AIR, OUTPUT);
+  pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_FILTER, OUTPUT);
+  
+  /** Leds bar setup */
   ledsBar.init(); 
-  ledsBar.setBrightness(64);
+  ledsBar.setBrightness(128);
   rmt_tx_int(RMT_CHANNEL_0, ledsBar.getPin());
 
   ledsBar.setCustomShow(ledsBarShow);
@@ -228,7 +238,7 @@ void setup()
     Config cfg;
     cfg.setPins(pins::AiThinker);
     cfg.setResolution(hiRes);
-    cfg.setBufferCount(2);
+    cfg.setBufferCount(1);
     cfg.setJpeg(90);
 
     bool ok = Camera.begin(cfg);
@@ -244,24 +254,28 @@ void setup()
     Serial.print(".");
   }
 
-  Serial.println("");
-  Serial.print("http://");
-  Serial.println(WiFi.localIP());
+  /** Default state for objects */
+  digitalWrite(PIN_LED, LOW);
 
+  Serial.write("fishcam:air:on"); 
+  digitalWrite(PIN_AIR, HIGH);
+
+  Serial.write("fishcam:filter:on"); 
+  digitalWrite(PIN_FILTER, HIGH);
+
+  /** Server */
   server.on("/", handleDefaultPage);
-  server.on("/video", handleVideoPage);
-  server.on("/warm-light", handleWarmLight);
-  server.on("/cold-light", handleColdLight);
-  server.on("/party-light", handlePartyLight);
+  server.on("/warm-on", handleWarmLight);
+  server.on("/cold-on", handleColdLight);
+  server.on("/party-on", handlePartyLight);
   server.on("/light-off", handleLightOff);
-
   server.on("/air-on", handleAirOn);
   server.on("/air-off", handleAirOff);
   server.on("/filter-on", handleFilterOn);
   server.on("/filter-off", handleFilterOff);
-
-  server.on("/image.jpg", handleJpgHi);
+  server.on("/image.jpg", handleJpeg);
   server.on("/stream.mjpeg", handleMjpeg);
+  server.onNotFound(handleNotFound);
 
   server.begin();
 }
