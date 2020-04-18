@@ -1,54 +1,75 @@
 #include <Arduino.h>
+#include <ArduinoJson.h>
+#include <Wire.h>
 
 #define AIR_PUMP 5
 #define FILTER_PUMP 6
 
-String getValue(String data, char separator, int index)
-{
-  int found = 0;
-  int strIndex[] = {0, -1};
-  int maxIndex = data.length()-1;
-
-  for(int i=0; i <= maxIndex && found <= index; i++){
-    if(data.charAt(i) == separator || i == maxIndex){
-        found++;
-        strIndex[0] = strIndex[1]+1;
-        strIndex[1] = (i == maxIndex) ? i+1 : i;
-    }
-  }
-
-  return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
-}
-
 int getPinNumber(String pin)
 {
-  if (pin == "air") {
+  if (pin == "air") 
+  {
     return AIR_PUMP;
-  } else {
+  } 
+  else if (pin == "filter") 
+  {
     return FILTER_PUMP;
+  } 
+  else 
+  {
+    return 0;
   }
 }
 
 int getPinState(String pinState)
 {
-  if (pinState == "on") {
+  if (pinState == "on") 
+  {
     return HIGH;
-  } else {
+  } else if(pinState == "off"){
     return LOW;
+  } else {
+    return -1;
   }
 }
 
-void parseReceivedSerialData(String inData)
+void processCall(String command)
 {
-  if (inData.indexOf("fishcam:") >= 0) {
-    int pin = getPinNumber(getValue(inData, ':', 1));
-    int state = getPinState(getValue(inData, ':', 2));
-
-    digitalWrite(pin, state);
+  DynamicJsonDocument jsonBuffer(64);
+  auto error = deserializeJson(jsonBuffer, command);
+ 
+  if (!error) 
+  {
+    int gpio = getPinNumber(jsonBuffer["gpio"]);
+    int state = getPinState(jsonBuffer["state"]);
+ 
+    /** Set/Get GPIO state  */
+    if (state == -1) 
+    {
+      Wire.print(digitalRead(gpio));
+    } else {
+      digitalWrite(gpio, state);
+    }    
   }
 }
+ 
+void receiveEvent(int howMany) 
+{
+  String data = "";
+  while (0 < Wire.available()) 
+  {
+    char c = Wire.read();
+    data += c;
+  }
+  Serial.println(data);
+  processCall(data);
+}
 
-void setup() {
+void setup() 
+{
+  Wire.begin(8);
+  Wire.onReceive(receiveEvent);
+
   Serial.begin(115200);
 
   pinMode(AIR_PUMP, OUTPUT);
@@ -58,10 +79,7 @@ void setup() {
   digitalWrite(FILTER_PUMP, HIGH);
 }
 
-void loop() {
-  while(Serial.available()) {
-    String inData = Serial.readString();
-    parseReceivedSerialData(inData);
-    delay(100);
-  }
+void loop() 
+{
+  delay(10);
 }

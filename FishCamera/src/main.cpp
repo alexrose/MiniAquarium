@@ -12,6 +12,7 @@
  * Board "AI Thinker ESP32-CAM"
  */
 
+#include <Arduino.h>
 #include <WiFi.h>
 #include <esp32cam.h>
 #include <WS2812FX.h>
@@ -19,29 +20,37 @@
 #include <UserConfig.h>
 #include <ArduinoJson.h>
 #include <ESP32_RMT_Driver.h>
+#include <Wire.h>
 
-#define DATA_LED 12
-#define PIN_LED 2
-#define PIN_AIR 13
-#define PIN_FILTER 14
+#define PIN_LED 12
+#define PIN_SDA 13
+#define PIN_SCL 14
+//#define PIN_LIGHT 33
 
-/** WiFi credentials */
+// WiFi
 UserConfig::ConfigData configData;
 const char* WIFI_SSID = configData.ssid;
 const char* WIFI_PASS = configData.pass;
 
+// WebServer
 WebServer server(configData.serverPort);
 
+// Camera
 static auto loRes = esp32cam::Resolution::find(320, 240);
 static auto hiRes = esp32cam::Resolution::find(640, 480);
 
-/** Leds setup */
+// I2C
+int I2Caddress = 8;
+char remoteReadResponse[10];
+
+// Leds
 int ledsNo = 8;
 int ledStart = 0;
 int ledStop = 7;
-WS2812FX ledsBar = WS2812FX(ledsNo, DATA_LED, NEO_GRB  + NEO_KHZ800);
 
-/** Custom show functions which will use the RMT hardware to drive the LEDs. */
+WS2812FX ledsBar = WS2812FX(ledsNo, PIN_LED, NEO_GRB  + NEO_KHZ800);
+
+// Custom show functions which will use the RMT hardware to drive the LEDs
 void ledsBarShow(void) {
   uint8_t *pixels = ledsBar.getPixels();
   uint16_t numBytes = ledsBar.getNumBytes() + 1;
@@ -81,16 +90,53 @@ void handleMjpeg()
   }
 }
 
+void remoteDigitalWrite(String pin, String state)
+{
+  String val = "{\"gpio\":\""+pin+"\",\"state\":\""+state+"\"}";
+  char buff[64];
+  val.toCharArray(buff, 64);
+
+  Wire.beginTransmission(8);
+  Wire.write(buff);
+  byte res = Wire.endTransmission(); 
+
+  Serial.println(res);
+}
+
+// char* remoteDigitalRead(String pin)
+// {
+//   delay(500);
+//   String val = "{\"gpio\":\""+pin+"\",\"action\":\"read\"}";
+//   char buff[128];
+//   val.toCharArray(buff,128);
+
+//   Wire.beginTransmission(I2Caddress);
+//   Wire.write(buff);
+//   Wire.endTransmission();
+
+//   // Request(8 byte) data from slave
+//   Wire.requestFrom(I2Caddress, 8);
+
+//   for (byte i=0; i<8; i++)
+//   {
+//       remoteReadResponse[i] = Wire.read();
+//   }
+//   remoteReadResponse[8] = '\0';
+
+//   return remoteReadResponse;
+// }
+
 String getStatus(String message) 
 {
   String jsonString;
   StaticJsonDocument<1024> data;
-
-  data["air"] = digitalRead(PIN_AIR);
-  data["light"] = digitalRead(PIN_LED);
-  data["filter"] = digitalRead(PIN_FILTER);
+  
   data["status"] = "success";
   data["message"] = message;
+  
+  //data["air"] = remoteDigitalRead("air");
+  //data["light"] = digitalRead(PIN_LIGHT);
+  //data["filter"] = remoteDigitalRead("filter");
   data["url"]["base"] = String(configData.server);
   data["url"]["image"] = "/image.jpg";
   data["url"]["video"] = "/stream.mjpeg";
@@ -107,103 +153,82 @@ String getStatus(String message)
   return jsonString;
 }
 
-/** Web page: render image(default) */
+// Web page: status
 void handleDefaultPage()
 {
   server.send(200, "application/json", getStatus(""));
 }
 
-/** Web page: turn on lights(warn) & render video */
+// Web page: turn on warm lights
 void handleWarmLight()
 {
   ledsBar.stop();
   ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, 0xfafa49, 1000, NO_OPTIONS);
   ledsBar.start();
 
-  digitalWrite(PIN_LED, HIGH);
+  //digitalWrite(PIN_LIGHT, LOW);
   server.send(200, "application/json", getStatus("Warm light is on."));
 }
 
-/** Web page: turn on lights(cold) & render video */
+// Web page: turn on cold lights
 void handleColdLight()
 {
   ledsBar.stop();
   ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, WHITE, 1000, NO_OPTIONS);
   ledsBar.start();
 
-  digitalWrite(PIN_LED, HIGH);
+  //digitalWrite(PIN_LIGHT, LOW);
   server.send(200, "application/json", getStatus("Cold light is on."));
 }
 
-/** Web page: turn on lights(party) & render video */
+// Web page: turn on lights(party)
 void handlePartyLight()
 {
   ledsBar.stop();
   ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_RAINBOW_CYCLE, BLUE, 512, NO_OPTIONS);
   ledsBar.start();
 
-  digitalWrite(PIN_LED, HIGH);
+  //digitalWrite(PIN_LIGHT, LOW);
   server.send(200, "application/json", getStatus("Party lights are on."));
 }
 
-/** Web page: turn onf lights & render video */
+// Web page: turn off lights
 void handleLightOff()
 {
   ledsBar.stop();
-  
-  digitalWrite(PIN_LED, LOW);
+  //digitalWrite(PIN_LIGHT, HIGH);
   server.send(200, "application/json", getStatus("Lights are off."));
 }
 
-/** Web page: turn air pump on & render video */
+// Web page: turn air pump on
 void handleAirOn()
 {
-  while(Serial.availableForWrite()) {
-    Serial.write("fishcam:air:on"); 
-    break;
-  }
-  
-  digitalWrite(PIN_AIR, HIGH);
+  remoteDigitalWrite("air", "on");
   server.send(200, "application/json", getStatus("Air pump is on."));
 }
 
-/** Web page: turn air pump off & render video */
+// Web page: turn air pump off
 void handleAirOff()
 {
-  while(Serial.availableForWrite()) {
-    Serial.write("fishcam:air:off"); 
-    break;
-  }
-
-  digitalWrite(PIN_AIR, LOW);
+  remoteDigitalWrite("air", "off");
   server.send(200, "application/json", getStatus("Air pump is off."));
 }
 
-/** Web page: turn water filter on & render video */
+// Web page: turn water filter
 void handleFilterOn()
 {
-  while(Serial.availableForWrite()) {
-    Serial.write("fishcam:filter:on"); 
-    break;
-  }
-
-  digitalWrite(PIN_FILTER, HIGH);
+  remoteDigitalWrite("filter", "on");
   server.send(200, "application/json", getStatus("Filter pump is on."));
 }
 
-/** Web page: turn water filter off & render video */
+// Web page: turn water filter off
 void handleFilterOff()
 {
-  
-  while(Serial.availableForWrite()) {
-    Serial.write("fishcam:filter:off"); 
-    break;
-  }
-
-  digitalWrite(PIN_FILTER, LOW);
+  remoteDigitalWrite("filter", "off");
   server.send(200, "application/json", getStatus("Filter pump is off."));
 }
 
+// Web page: action not found
 void handleNotFound()
 {
   String jsonString;
@@ -220,12 +245,8 @@ void setup()
 {
   Serial.begin(115200);
   Serial.setDebugOutput(0);
-
-  pinMode(PIN_AIR, OUTPUT);
-  pinMode(PIN_LED, OUTPUT);
-  pinMode(PIN_FILTER, OUTPUT);
   
-  /** Leds bar setup */
+  // Leds bar setup
   ledsBar.init(); 
   ledsBar.setBrightness(128);
   rmt_tx_int(RMT_CHANNEL_0, ledsBar.getPin());
@@ -233,6 +254,10 @@ void setup()
   ledsBar.setCustomShow(ledsBarShow);
   ledsBar.stop();
 
+  //pinMode(PIN_LIGHT, OUTPUT);
+  //digitalWrite(PIN_LIGHT, HIGH);
+
+  // Camera
   {
     using namespace esp32cam;
     Config cfg;
@@ -245,6 +270,7 @@ void setup()
     Serial.println(ok ? "Camera ok." : "Camera failed.");
   }
 
+  // WiFi connection
   WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -254,16 +280,7 @@ void setup()
     Serial.print(".");
   }
 
-  /** Default state for objects */
-  digitalWrite(PIN_LED, LOW);
-
-  Serial.write("fishcam:air:on"); 
-  digitalWrite(PIN_AIR, HIGH);
-
-  Serial.write("fishcam:filter:on"); 
-  digitalWrite(PIN_FILTER, HIGH);
-
-  /** Server */
+  // Web Server actions
   server.on("/", handleDefaultPage);
   server.on("/warm-on", handleWarmLight);
   server.on("/cold-on", handleColdLight);
@@ -276,8 +293,10 @@ void setup()
   server.on("/image.jpg", handleJpeg);
   server.on("/stream.mjpeg", handleMjpeg);
   server.onNotFound(handleNotFound);
-
   server.begin();
+
+  // I2C communication
+  Wire.begin(PIN_SDA, PIN_SCL);
 }
 
 void loop()
