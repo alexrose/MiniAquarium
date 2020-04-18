@@ -20,10 +20,7 @@
 #include <ArduinoJson.h>
 #include <ESP32_RMT_Driver.h>
 
-#define DATA_LED 12
-#define PIN_LED 2
-#define PIN_AIR 13
-#define PIN_FILTER 14
+#define PIN_LED 12
 
 /** WiFi credentials */
 UserConfig::ConfigData configData;
@@ -39,7 +36,7 @@ static auto hiRes = esp32cam::Resolution::find(640, 480);
 int ledsNo = 8;
 int ledStart = 0;
 int ledStop = 7;
-WS2812FX ledsBar = WS2812FX(ledsNo, DATA_LED, NEO_GRB  + NEO_KHZ800);
+WS2812FX ledsBar = WS2812FX(ledsNo, PIN_LED, NEO_GRB  + NEO_KHZ800);
 
 /** Custom show functions which will use the RMT hardware to drive the LEDs. */
 void ledsBarShow(void) {
@@ -86,9 +83,6 @@ String getStatus(String message)
   String jsonString;
   StaticJsonDocument<1024> data;
 
-  data["air"] = digitalRead(PIN_AIR);
-  data["light"] = digitalRead(PIN_LED);
-  data["filter"] = digitalRead(PIN_FILTER);
   data["status"] = "success";
   data["message"] = message;
   data["url"]["base"] = String(configData.server);
@@ -120,7 +114,6 @@ void handleWarmLight()
   ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, 0xfafa49, 1000, NO_OPTIONS);
   ledsBar.start();
 
-  digitalWrite(PIN_LED, HIGH);
   server.send(200, "application/json", getStatus("Warm light is on."));
 }
 
@@ -131,7 +124,6 @@ void handleColdLight()
   ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, WHITE, 1000, NO_OPTIONS);
   ledsBar.start();
 
-  digitalWrite(PIN_LED, HIGH);
   server.send(200, "application/json", getStatus("Cold light is on."));
 }
 
@@ -142,7 +134,6 @@ void handlePartyLight()
   ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_RAINBOW_CYCLE, BLUE, 512, NO_OPTIONS);
   ledsBar.start();
 
-  digitalWrite(PIN_LED, HIGH);
   server.send(200, "application/json", getStatus("Party lights are on."));
 }
 
@@ -150,8 +141,7 @@ void handlePartyLight()
 void handleLightOff()
 {
   ledsBar.stop();
-  
-  digitalWrite(PIN_LED, LOW);
+
   server.send(200, "application/json", getStatus("Lights are off."));
 }
 
@@ -163,7 +153,6 @@ void handleAirOn()
     break;
   }
   
-  digitalWrite(PIN_AIR, HIGH);
   server.send(200, "application/json", getStatus("Air pump is on."));
 }
 
@@ -175,7 +164,6 @@ void handleAirOff()
     break;
   }
 
-  digitalWrite(PIN_AIR, LOW);
   server.send(200, "application/json", getStatus("Air pump is off."));
 }
 
@@ -187,7 +175,6 @@ void handleFilterOn()
     break;
   }
 
-  digitalWrite(PIN_FILTER, HIGH);
   server.send(200, "application/json", getStatus("Filter pump is on."));
 }
 
@@ -200,7 +187,6 @@ void handleFilterOff()
     break;
   }
 
-  digitalWrite(PIN_FILTER, LOW);
   server.send(200, "application/json", getStatus("Filter pump is off."));
 }
 
@@ -220,10 +206,6 @@ void setup()
 {
   Serial.begin(115200);
   Serial.setDebugOutput(0);
-
-  pinMode(PIN_AIR, OUTPUT);
-  pinMode(PIN_LED, OUTPUT);
-  pinMode(PIN_FILTER, OUTPUT);
   
   /** Leds bar setup */
   ledsBar.init(); 
@@ -253,15 +235,6 @@ void setup()
     delay(500);
     Serial.print(".");
   }
-
-  /** Default state for objects */
-  digitalWrite(PIN_LED, LOW);
-
-  Serial.write("fishcam:air:on"); 
-  digitalWrite(PIN_AIR, HIGH);
-
-  Serial.write("fishcam:filter:on"); 
-  digitalWrite(PIN_FILTER, HIGH);
 
   /** Server */
   server.on("/", handleDefaultPage);
