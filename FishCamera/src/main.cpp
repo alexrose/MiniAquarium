@@ -205,7 +205,7 @@ void handleNotFound()
 void setup()
 {
   Serial.begin(115200);
-  Serial.setDebugOutput(0);
+  Serial.setDebugOutput(false);
   
   /** Leds bar setup */
   ledsBar.init(); 
@@ -256,6 +256,6 @@ void setup()
 void loop()
 {
   server.handleClient();
-  ledsBar.service(); 
+  ledsBar.service();
 }
 

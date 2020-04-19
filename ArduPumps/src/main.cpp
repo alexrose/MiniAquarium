@@ -9,8 +9,10 @@ String getValue(String data, char separator, int index)
   int strIndex[] = {0, -1};
   int maxIndex = data.length()-1;
 
-  for(int i=0; i <= maxIndex && found <= index; i++){
-    if(data.charAt(i) == separator || i == maxIndex){
+  for(int i=0; i <= maxIndex && found <= index; i++)
+  {
+    if(data.charAt(i) == separator || i == maxIndex)
+    {
         found++;
         strIndex[0] = strIndex[1]+1;
         strIndex[1] = (i == maxIndex) ? i+1 : i;
@@ -22,33 +24,48 @@ String getValue(String data, char separator, int index)
 
 int getPinNumber(String pin)
 {
-  if (pin == "air") {
+  if (pin == "air") 
+  {
     return AIR_PUMP;
-  } else {
+  } 
+  
+  if (pin == "filter")
+  {
     return FILTER_PUMP;
   }
+  
+  return -1;
 }
 
 int getPinState(String pinState)
 {
-  if (pinState == "on") {
+  if (pinState == "on") 
+  {
     return HIGH;
-  } else {
-    return LOW;
-  }
+  } 
+  
+  return LOW;
 }
 
 void parseReceivedSerialData(String inData)
 {
   if (inData.indexOf("fishcam:") >= 0) {
-    int pin = getPinNumber(getValue(inData, ':', 1));
-    int state = getPinState(getValue(inData, ':', 2));
+    String pinName = getValue(inData, ':', 1);
+    String pinState = getValue(inData, ':', 2);
 
-    digitalWrite(pin, state);
+    int pin = getPinNumber(pinName);
+    int state = getPinState(pinState);
+
+    if (pin >= 0) 
+    {
+      digitalWrite(pin, state);
+      Serial.println("fishpump:"+pinName+":"+pinState);
+    }
   }
 }
 
-void setup() {
+void setup() 
+{
   Serial.begin(115200);
 
   pinMode(AIR_PUMP, OUTPUT);
@@ -56,10 +73,16 @@ void setup() {
 
   digitalWrite(AIR_PUMP, HIGH);
   digitalWrite(FILTER_PUMP, HIGH);
+
+  Serial.println("fishpump:air:on");
+  delay(250);
+  Serial.println("fishpump:filter:on");
 }
 
-void loop() {
-  while(Serial.available()) {
+void loop() 
+{
+  while(Serial.available()) 
+  {
     String inData = Serial.readString();
     parseReceivedSerialData(inData);
     delay(100);
