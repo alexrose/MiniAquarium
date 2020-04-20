@@ -13,14 +13,17 @@
  */
 
 #include <WiFi.h>
+#include <OneWire.h>
 #include <esp32cam.h>
 #include <WS2812FX.h>
 #include <WebServer.h>
 #include <UserConfig.h>
 #include <ArduinoJson.h>
+#include <DallasTemperature.h>
 #include <ESP32_RMT_Driver.h>
 
 #define PIN_LED 12
+#define PIN_TEMP 13
 
 /** WiFi credentials */
 UserConfig::ConfigData configData;
@@ -37,6 +40,10 @@ int ledsNo = 8;
 int ledStart = 0;
 int ledStop = 7;
 WS2812FX ledsBar = WS2812FX(ledsNo, PIN_LED, NEO_GRB  + NEO_KHZ800);
+
+/** Temp sensor */
+OneWire oneWire(PIN_TEMP);
+DallasTemperature sensors(&oneWire);
 
 /** Custom show functions which will use the RMT hardware to drive the LEDs. */
 void ledsBarShow(void) {
@@ -83,8 +90,11 @@ String getStatus(String message)
   String jsonString;
   StaticJsonDocument<1024> data;
 
+  sensors.requestTemperatures(); 
+
   data["status"] = "success";
   data["message"] = message;
+  data["temperature"] = sensors.getTempCByIndex(0);
   data["url"]["base"] = String(configData.server);
   data["url"]["image"] = "/image.jpg";
   data["url"]["video"] = "/stream.mjpeg";
@@ -214,6 +224,9 @@ void setup()
 
   ledsBar.setCustomShow(ledsBarShow);
   ledsBar.stop();
+
+  /** Temp sensor start */
+  sensors.begin();
 
   {
     using namespace esp32cam;
