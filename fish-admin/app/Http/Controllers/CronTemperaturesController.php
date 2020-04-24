@@ -15,7 +15,7 @@ class CronTemperaturesController extends Controller
         $baseURL = $this->getBaseUrl();
         $data = $this->getData($baseURL);
 
-        if ($data['status'] == "success") {
+        if ($data->status == "success") {
             $temp = new Temperature();
             $temp->value = $data->temperature;
             $temp->save();
