@@ -120,7 +120,6 @@ void handleDefaultPage()
 /** Web page: turn on lights(warn) & render video */
 void handleWarmLight()
 {
-  ledsBar.stop();
   ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, 0xfafa49, 1000, NO_OPTIONS);
   ledsBar.start();
 
@@ -130,7 +129,6 @@ void handleWarmLight()
 /** Web page: turn on lights(cold) & render video */
 void handleColdLight()
 {
-  ledsBar.stop();
   ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, WHITE, 1000, NO_OPTIONS);
   ledsBar.start();
 
@@ -140,7 +138,6 @@ void handleColdLight()
 /** Web page: turn on lights(party) & render video */
 void handlePartyLight()
 {
-  ledsBar.stop();
   ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_RAINBOW_CYCLE, BLUE, 512, NO_OPTIONS);
   ledsBar.start();
 
