@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Temperature;
-use App\Http\Traits\SettingsTrait;
-use App\Http\Traits\GuzzleTrait;
-use Carbon\Carbon;
+use App\Models\Temperature;
+use App\Traits\GuzzleTrait;
+use App\Traits\SettingsTrait;
 
 class CronTemperaturesController extends Controller
 {
@@ -17,9 +16,7 @@ class CronTemperaturesController extends Controller
         $data = $this->getData($baseURL);
 
         if ($data->status == "success") {
-            $temp = new Temperature();
-            $temp->value = $data->temperature;
-            $temp->save();
+            Temperature::create(["value" => $data->temperature]);
         } else {
             return $data->message;
         }
@@ -32,21 +29,24 @@ class CronTemperaturesController extends Controller
             "message" => ""
         ];
 
-        try{
-            $tz = env("APP_TIMEZONE");
-            $date = (!$date) ? Carbon::now() : Carbon::createFromFormat("Y-m-d", $date, $tz);
-            $temperatures = Temperature::whereDate("created_at", $date->toDateString())->get();
+        try {
+            $currentDate = $this->getDate($date);
+            $temperatures = Temperature::whereDate("created_at", $currentDate->toDateString())->get();
 
             foreach ($temperatures as $temperature) {
-                $data["result"][$temperature->created_at->format("H:i")] = number_format($temperature->value, 2);
+                $data["data"][] = json_decode(json_encode(array(
+                    "time" => $temperature->created_at->format("H:i"),
+                    "value" => number_format($temperature->value, 2)
+                )));
             }
 
-            return json_encode($data);
+            return response()->json($data);
 
         } catch (\Exception $exception) {
-            $data["status"] = "error";
-            $data["message"] = $exception->getMessage();
-            return json_encode($data);
+            return response()->json([
+                "status" => "error",
+                "message" => $exception->getMessage()
+            ]);
         }
     }
 }

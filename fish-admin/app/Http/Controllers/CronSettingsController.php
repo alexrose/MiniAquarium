@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Setting;
-use App\Http\Traits\SettingsTrait;
-use App\Http\Traits\GuzzleTrait;
+use App\Traits\SettingsTrait;
+use App\Traits\GuzzleTrait;
 
 class CronSettingsController extends Controller
 {

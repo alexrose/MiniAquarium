@@ -1,5 +1,5 @@
 <?php
-namespace App\Http\Traits;
+namespace App\Traits;
 
 use GuzzleHttp\Client;
 
@@ -15,10 +15,6 @@ trait GuzzleTrait
                 $body->seek(0);
                 return json_decode($body->read(1024));
             }
-            return json_decode(json_encode([
-                "status" => "error",
-                "message" => "Invalid response from API."
-            ]));
         } catch (\Exception $exception){
             return json_decode(json_encode([
                 "status" => "error",
