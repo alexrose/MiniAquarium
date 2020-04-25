@@ -16,19 +16,10 @@ class CronSettingsController extends Controller
 
         if ($data->status == "success") {
             foreach ($data->url as $settingName => $settingValue) {
-                // Get the setting from db
-                $currentSetting = Setting::where("name", $settingName)->first();
-                if(!$currentSetting) {
-                    // create a new one
-                    $newSetting = new Setting();
-                    $newSetting->name = $settingName;
-                    $newSetting->value = $settingValue;
-                    $newSetting->save();
-                } elseif($currentSetting->value != $settingValue) {
-                    // update old one
-                    $currentSetting->value = $settingValue;
-                    $currentSetting->save();
-                }
+                Setting::updateOrCreate(
+                    ["name" => $settingName],
+                    ["name" => $settingName, "value" => $settingValue]
+                );
             }
         } else {
             return $data->message;
