@@ -98,14 +98,14 @@ String getStatus(String message)
   data["url"]["base"] = String(configData.server);
   data["url"]["image"] = "/image.jpg";
   data["url"]["video"] = "/stream.mjpeg";
-  data["url"]["air-on"] = "/air-on";
-  data["url"]["air-off"] = "/air-off";
-  data["url"]["filter-on"] = "/filter-on";
-  data["url"]["filter-off"] = "/filter-off";
-  data["url"]["warm-light"] = "/warm-on";
-  data["url"]["cold-light"] = "/cold-on";
-  data["url"]["party-light"] = "/party-on";
-  data["url"]["light-off"] = "/light-off";
+  data["url"]["airOn"] = "/air-on";
+  data["url"]["airOff"] = "/air-off";
+  data["url"]["filterOn"] = "/filter-on";
+  data["url"]["filterOff"] = "/filter-off";
+  data["url"]["warmLight"] = "/warm-on";
+  data["url"]["coldLight"] = "/cold-on";
+  data["url"]["partyLight"] = "/party-on";
+  data["url"]["lightOff"] = "/light-off";
   
   serializeJson(data, jsonString);
   return jsonString;
@@ -114,6 +114,7 @@ String getStatus(String message)
 /** Web page: render image(default) */
 void handleDefaultPage()
 {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", getStatus(""));
 }
 
@@ -123,6 +124,7 @@ void handleWarmLight()
   ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, 0xfafa49, 1000, NO_OPTIONS);
   ledsBar.start();
 
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", getStatus("Warm light is on."));
 }
 
@@ -132,6 +134,7 @@ void handleColdLight()
   ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, WHITE, 1000, NO_OPTIONS);
   ledsBar.start();
 
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", getStatus("Cold light is on."));
 }
 
@@ -141,6 +144,7 @@ void handlePartyLight()
   ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_RAINBOW_CYCLE, BLUE, 512, NO_OPTIONS);
   ledsBar.start();
 
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", getStatus("Party lights are on."));
 }
 
@@ -149,6 +153,7 @@ void handleLightOff()
 {
   ledsBar.stop();
 
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", getStatus("Lights are off."));
 }
 
@@ -160,6 +165,7 @@ void handleAirOn()
     break;
   }
   
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", getStatus("Air pump is on."));
 }
 
@@ -171,6 +177,7 @@ void handleAirOff()
     break;
   }
 
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", getStatus("Air pump is off."));
 }
 
@@ -194,6 +201,7 @@ void handleFilterOff()
     break;
   }
 
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", getStatus("Filter pump is off."));
 }
 
@@ -206,6 +214,7 @@ void handleNotFound()
   data["message"] = "404 - action not found.";
   
   serializeJson(data, jsonString);
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(404, "application/json", jsonString);
 }
 
@@ -265,7 +274,7 @@ void setup()
 
 void loop()
 {
-  server.handleClient();
   ledsBar.service();
+  server.handleClient();
 }
 

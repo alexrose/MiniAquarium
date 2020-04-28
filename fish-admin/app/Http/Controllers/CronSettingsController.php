@@ -16,7 +16,6 @@ class CronSettingsController extends Controller
 
         if ($data->status == "success") {
             foreach ($data->url as $settingName => $settingValue) {
-                $settingName = str_replace("-", "", $settingName);
                 Setting::updateOrCreate(
                     ["name" => $settingName],
                     ["name" => $settingName, "value" => $settingValue]
