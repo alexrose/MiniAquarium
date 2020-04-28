@@ -30,18 +30,25 @@ class CronSettingsController extends Controller
     {
         $baseURL = $this->getBaseUrl();
         $settings = Setting::all();
-        $data = [];
-        foreach ($settings as $setting) {
+        $data = ['status' => 'success'];
 
-            if (strpos($setting->name, "air") !== false) {
-                $data['button']['air'][$setting->name] = $baseURL.$setting->value;
-            } elseif (strpos($setting->name, "filter") !== false) {
-                $data['button']['filter'][$setting->name] = $baseURL.$setting->value;
-            } elseif (strpos($setting->name, "light") !== false) {
-                $data['button']['light'][$setting->name] = $baseURL.$setting->value;
-            } elseif ($setting->name != "base") {
-                $data['media'][$setting->name] =  $baseURL.$setting->value;
+        if($settings) {
+            foreach ($settings as $setting) {
+                if (strpos($setting->name, "air") !== false) {
+                    $data['button']['air'][$setting->name] = $baseURL.$setting->value;
+                } elseif (strpos($setting->name, "filter") !== false) {
+                    $data['button']['filter'][$setting->name] = $baseURL.$setting->value;
+                } elseif (strpos($setting->name, "light") !== false) {
+                    $data['button']['light'][$setting->name] = $baseURL.$setting->value;
+                } elseif ($setting->name != "base") {
+                    $data['media'][$setting->name] =  $baseURL.$setting->value;
+                }
             }
+        } else {
+            $data = [
+                'status' => 'error',
+                'message' => 'Setting not present in database.'
+            ];
         }
 
         return response()->json($data);
