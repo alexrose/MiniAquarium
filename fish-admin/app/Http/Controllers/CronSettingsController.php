@@ -30,27 +30,46 @@ class CronSettingsController extends Controller
     {
         $baseURL = $this->getBaseUrl();
         $settings = Setting::all();
-        $data = ['status' => 'success'];
 
         if($settings) {
-            foreach ($settings as $setting) {
-                if (strpos($setting->name, "air") !== false) {
-                    $data['button']['air'][$setting->name] = $baseURL.$setting->value;
-                } elseif (strpos($setting->name, "filter") !== false) {
-                    $data['button']['filter'][$setting->name] = $baseURL.$setting->value;
-                } elseif (strpos($setting->name, "light") !== false) {
-                    $data['button']['light'][$setting->name] = $baseURL.$setting->value;
+            foreach ($settings as $key => $setting) {
+                if (strpos(strtolower($setting->name), "air") !== false) {
+                    $output[] = array(
+                        'id' => $key,
+                        'name' => $setting->name,
+                        'value' => $baseURL.$setting->value,
+                        'type' => 'air'
+                    );
+                } elseif (strpos(strtolower($setting->name), "filter") !== false) {
+                    $output[] = array(
+                        'name' => $setting->name,
+                        'value' => $baseURL.$setting->value,
+                        'type' => 'filter'
+                    );
+                } elseif (strpos(strtolower($setting->name), "light") !== false) {
+                    $output[] = array(
+                        'name' => $setting->name,
+                        'value' => $baseURL.$setting->value,
+                        'type' => 'light'
+                    );
+                } elseif (strpos(strtolower($setting->name), "temperature") !== false) {
+                    $output[] = array(
+                        'name' => $setting->name,
+                        'value' => $setting->value,
+                        'type' => 'temperature'
+                    );
                 } elseif ($setting->name != "base") {
-                    $data['media'][$setting->name] =  $baseURL.$setting->value;
+                    $output[] = array(
+                        'name' => $setting->name,
+                        'value' => $baseURL.$setting->value,
+                        'type' => 'media'
+                    );
                 }
             }
         } else {
-            $data = [
-                'status' => 'error',
-                'message' => 'Setting not present in database.'
-            ];
+            $output = ['message' => 'Setting not present in database.'];
         }
 
-        return response()->json($data);
+        return response()->json(json_decode(json_encode($output)));
     }
 }
