@@ -1,8 +1,9 @@
 import React from 'react'
 import Image from "react-bootstrap/Image";
 
-export default function RenderMedia(url) {
+export default function RenderMedia(props) {
+
     return (
-        <Image src={url} rounded fluid />
+        <Image alt='' src={props.url} rounded fluid />
     )
 }

@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import { getSettings, getTemperatures } from './../actions/actionCreators';
 import { bindActionCreators } from 'redux';
 
-import RenderMedia from './RenderMedia';
 import RenderButtons from "./RenderButtons";
 
 import Col from "react-bootstrap/Col";
@@ -48,24 +47,16 @@ class Grid extends Component {
         });
 
         return (
-            <Container className="p-1">
-                <Row>
-                    <Col>
-                        <ButtonGroup aria-label={type}>
-                            {typeSettings.map((item, index) => <RenderButtons
-                                data={item}
-                                key={item.name}
-                                local={local}
-                                callOnClick={this.callBaby}
-                            />)}
-                        </ButtonGroup>
-                    </Col>
-                </Row>
-            </Container>
+            <ButtonGroup aria-label={type} className="p-1">
+                {typeSettings.map((item, index) => <RenderButtons
+                    data={item}
+                    key={item.name}
+                    local={local}
+                    callOnClick={this.callBaby}
+                />)}
+            </ButtonGroup>
         )
     }
-
-
 
     render() {
         let { allSettings } = this.props;
@@ -75,18 +66,18 @@ class Grid extends Component {
             <Container fluid>
                 <Navbar bg="dark" variant="dark">
                     <Navbar.Brand href="#">
-                        <img alt="" src="/assets/logo512.png" width="30" height="30"
-                             className="d-inline-block align-top"/>
+                        <img alt='' src="/assets/logo512.png" width="30" height="30" className="d-inline-block align-top"/>
                         {' CyboFish Panel '}
                     </Navbar.Brand>
                 </Navbar>
-
-
                 <Breadcrumb>
                     <Container fluid>
                         <Row>
                             <Col xs={6} className="p-0 m-0">
-                                { ' ' }
+                                <ButtonGroup>
+                                    <Button variant="outline-secondary" size="sm">Image</Button>
+                                    <Button variant="outline-secondary" size="sm">Video</Button>
+                                </ButtonGroup>
                             </Col>
                             <Col xs={6} className="p-0 m-0">
                                 <ButtonGroup className="float-right">
@@ -100,26 +91,25 @@ class Grid extends Component {
 
                 <Container fluid className="m-0 p-0">
                     <Row>
-                        <Col md={6}>
+                        <Col>
                             <Alert variant="warning">
                                 {allSettings.length > 0 ? this.generateButtons(allSettings, 'air', false) : "Loading"}
                                 {allSettings.length > 0 ? this.generateButtons(allSettings, 'filter', false) : "Loading"}
                                 {allSettings.length > 0 ? this.generateButtons(allSettings, 'light', false) : "Loading"}
                             </Alert>
                         </Col>
-                        <Col md={6}>
-                            <Alert variant="warning">
-                                {this.state.mediaUrl ? <RenderMedia url={this.state.mediaUrl} /> : ("") }
-                            </Alert>
-                        </Col>
                     </Row>
                     <Row>
-                        <Col md={6} className="p-1">
-                            {temperatures.night ? <RenderChart data={temperatures} time="night" /> : ("")}
+                        <Col lg={6}>
+                            <Alert variant="warning">
+                                {temperatures.night ? <RenderChart data={temperatures} time="night" /> : ("")}
+                            </Alert>
                         </Col>
 
-                        <Col md={6} className="p-1">
-                            {temperatures.day ? <RenderChart data={temperatures} time="day" /> : ("")}
+                        <Col lg={6}>
+                            <Alert variant="warning">
+                                {temperatures.day ? <RenderChart data={temperatures} time="day" /> : ("")}
+                            </Alert>
                         </Col>
                     </Row>
                 </Container>
