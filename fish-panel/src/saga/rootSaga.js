@@ -1,11 +1,11 @@
 import { all } from 'redux-saga/effects';
-import { getUserWatcher } from './userWatcher';
 import { getSettingsWatcher } from "./settingsWatcher";
+import { getTemperaturesWatcher } from "./temperaturesWatcher";
 
 /** Import watchers */
 export default function* rootSaga() {
     yield all([
-        getUserWatcher(),
-        getSettingsWatcher()
+        getSettingsWatcher(),
+        getTemperaturesWatcher()
     ]);
 }

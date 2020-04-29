@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Temperature;
 use App\Traits\GuzzleTrait;
 use App\Traits\SettingsTrait;
+use Carbon\Carbon;
 
 class CronTemperaturesController extends Controller
 {
@@ -24,29 +25,43 @@ class CronTemperaturesController extends Controller
 
     public function data($date = null)
     {
-        $data = [
-            "status" => "success",
-            "message" => ""
-        ];
-
         try {
             $currentDate = $this->getDate($date);
-            $temperatures = Temperature::whereDate("created_at", $currentDate->toDateString())->get();
+            $temperaturesNight = Temperature::whereDate("created_at", $currentDate->toDateString())
+                ->whereTime('created_at', '>=', Carbon::parse('00:00'))
+                ->whereTime('created_at', '<=', Carbon::parse('07:00'))
+                ->where('value', '>' , 0)
+                ->orderBy('created_at', 'ASC')
+                ->get();
 
-            foreach ($temperatures as $temperature) {
-                $data["data"][] = json_decode(json_encode(array(
+            $temperaturesDay = Temperature::whereDate("created_at", $currentDate->toDateString())
+                ->whereTime('created_at', '>=', Carbon::parse('07:00'))
+                ->whereTime('created_at', '<=', Carbon::parse('23:59'))
+                ->where('value', '>' , 0)
+                ->orderBy('created_at', 'ASC')
+                ->get();
+
+            foreach ($temperaturesNight as $key => $temperature) {
+                $night[] = array(
+                    "id" => $key,
                     "time" => $temperature->created_at->format("H:i"),
-                    "value" => number_format($temperature->value, 2)
-                )));
+                    "temperature" => number_format($temperature->value, 2)
+                );
             }
 
-            return response()->json($data);
+            foreach ($temperaturesDay as $key => $temperature) {
+                $day[] = array(
+                    "id" => $key,
+                    "time" => $temperature->created_at->format("H:i"),
+                    "temperature" => number_format($temperature->value, 2)
+                );
+            }
+
+            return response()->json(json_decode(json_encode(['day' => $day, 'night' => $night])));
 
         } catch (\Exception $exception) {
-            return response()->json([
-                "status" => "error",
-                "message" => $exception->getMessage()
-            ]);
+            $output = ['message' => $exception->getMessage()];
+            return response()->json(json_decode(json_encode($output)));
         }
     }
 }

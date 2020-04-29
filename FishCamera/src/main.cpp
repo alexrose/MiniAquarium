@@ -189,6 +189,7 @@ void handleFilterOn()
     break;
   }
 
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", getStatus("Filter pump is on."));
 }
 

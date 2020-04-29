@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux';
-import { getSettings } from './../actions/actionCreators';
+import { getSettings, getTemperatures } from './../actions/actionCreators';
 import { bindActionCreators } from 'redux';
 
 import RenderMedia from './RenderMedia';
@@ -13,40 +13,36 @@ import Button from "react-bootstrap/Button";
 import Container from 'react-bootstrap/Container';
 import Breadcrumb from 'react-bootstrap/Breadcrumb';
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+import Alert from "react-bootstrap/Alert";
+import RenderChart from "./RenderChart";
 
 
 class Grid extends Component {
     constructor(props) {
         super(props);
-
         this.state = {
-            currentMediaUrl: ""
+            mediaUrl: ""
         }
 
-        //this.showAddress = this.showAddress.bind(this);
+        this.updateMediaUrl = this.updateMediaUrl.bind(this);
     }
 
     componentDidMount() {
-        this.props.getSettings()
+        this.props.getSettings();
+        this.props.getTemperatures();
+    }
+
+    updateMediaUrl(url) {
+        this.setState({
+            mediaUrl: url
+        });
     }
 
     callBaby(url) {
         console.log(url);
     }
-    // showAddress(id) {
-    //     console.log('HIT[5]: click ', id);
-    //     let currentUser = this.props.allSettings.filter((item) => {
-    //         return item.id === id
-    //     });
-    //     console.log('HIT[5]: currentUser ', currentUser);
-    //
-    //     this.setState({
-    //         currentUserAddress: currentUser,
-    //         currentId: id
-    //     })
-    // }
 
-    generateButtons(allSettings, type) {
+    generateButtons(allSettings, type, local) {
         let typeSettings = allSettings.filter((item) => {
             return item.type === type
         });
@@ -56,18 +52,24 @@ class Grid extends Component {
                 <Row>
                     <Col>
                         <ButtonGroup aria-label={type}>
-                            {typeSettings.map((item, index) => <RenderButtons data={item} key={item.name} callBabyOnClick={this.callBaby}/>)}
+                            {typeSettings.map((item, index) => <RenderButtons
+                                data={item}
+                                key={item.name}
+                                local={local}
+                                callOnClick={this.callBaby}
+                            />)}
                         </ButtonGroup>
                     </Col>
                 </Row>
-
             </Container>
         )
     }
 
 
+
     render() {
         let { allSettings } = this.props;
+        let { temperatures } = this.props;
 
         return (
             <Container fluid>
@@ -84,10 +86,7 @@ class Grid extends Component {
                     <Container fluid>
                         <Row>
                             <Col xs={6} className="p-0 m-0">
-                                <ButtonGroup>
-                                    <Button variant="outline-secondary" size="sm">Image</Button>
-                                    <Button variant="outline-secondary" size="sm">Video</Button>
-                                </ButtonGroup>
+                                { ' ' }
                             </Col>
                             <Col xs={6} className="p-0 m-0">
                                 <ButtonGroup className="float-right">
@@ -99,15 +98,28 @@ class Grid extends Component {
                     </Container>
                 </Breadcrumb>
 
-                <Container className="m-0 p-0">
+                <Container fluid className="m-0 p-0">
                     <Row>
                         <Col md={6}>
-                            {allSettings.length > 0 ? this.generateButtons(allSettings, 'air') : "Loading"}
-                            {allSettings.length > 0 ? this.generateButtons(allSettings, 'filter') : "Loading"}
-                            {allSettings.length > 0 ? this.generateButtons(allSettings, 'light') : "Loading"}
+                            <Alert variant="warning">
+                                {allSettings.length > 0 ? this.generateButtons(allSettings, 'air', false) : "Loading"}
+                                {allSettings.length > 0 ? this.generateButtons(allSettings, 'filter', false) : "Loading"}
+                                {allSettings.length > 0 ? this.generateButtons(allSettings, 'light', false) : "Loading"}
+                            </Alert>
                         </Col>
                         <Col md={6}>
-                            {this.state.currentMediaUrl ? <RenderMedia url={this.state.currentMediaUrl} /> : ("") }
+                            <Alert variant="warning">
+                                {this.state.mediaUrl ? <RenderMedia url={this.state.mediaUrl} /> : ("") }
+                            </Alert>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col md={6} className="p-1">
+                            {temperatures.night ? <RenderChart data={temperatures} time="night" /> : ("")}
+                        </Col>
+
+                        <Col md={6} className="p-1">
+                            {temperatures.day ? <RenderChart data={temperatures} time="day" /> : ("")}
                         </Col>
                     </Row>
                 </Container>
@@ -120,9 +132,10 @@ class Grid extends Component {
 // export default connect()(Grid);
 const mapStateToProps = (state) => {
     return {
-        allSettings: state.settingsData.allSettings
+        allSettings: state.settingsData.allSettings,
+        temperatures: state.temperaturesData.temperatures
     }
 }
-const mapDispatchToProps = dispatch => bindActionCreators({ getSettings }, dispatch);
+const mapDispatchToProps = dispatch => bindActionCreators({ getSettings, getTemperatures }, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(Grid);
