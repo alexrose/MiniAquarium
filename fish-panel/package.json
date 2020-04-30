@@ -1,5 +1,6 @@
 {
   "name": "fish-panel",
+  "homepage":"http://localhost/panel",
   "version": "0.0.1",
   "private": true,
   "dependencies": {
