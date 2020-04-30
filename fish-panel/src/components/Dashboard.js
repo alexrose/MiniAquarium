@@ -16,6 +16,9 @@ import Container from 'react-bootstrap/Container';
 import Breadcrumb from 'react-bootstrap/Breadcrumb';
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 class Dashboard extends Component {
     constructor(props) {
         super(props);
@@ -47,7 +50,7 @@ class Dashboard extends Component {
 
     closeMediaModal() {
         this.setState({
-            mediaUrl: 'url',
+            mediaUrl: '',
             showModal: false
         });
     }
@@ -70,7 +73,7 @@ class Dashboard extends Component {
     }
 
     render() {
-        let {allSettings, temperatures, settingStatus} = this.props;
+        let {allSettings, temperatures} = this.props;
         let {showModal, mediaUrl} = this.state;
 
         return (
@@ -136,6 +139,7 @@ class Dashboard extends Component {
                 </Container>
 
                 <RenderMedia show={showModal} mediaUrl={mediaUrl} handleClose={this.closeMediaModal} />
+                <ToastContainer autoClose={2000} />
             </Container>
 
         )

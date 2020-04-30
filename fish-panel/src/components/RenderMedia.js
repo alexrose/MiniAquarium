@@ -8,12 +8,13 @@ class RenderMedia extends Component {
 
         return (
             <>
-                <Modal show={show} onHide={handleClose} animation={false}>
+                <Modal show={show} onHide={handleClose} animation={false} aria-labelledby="contained-modal-title-vcenter"
+                       centered>
                     <Modal.Header closeButton>
                         <Modal.Title>Modal heading</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Image src={`${mediaUrl}?t=${Date.now()}`}/>
+                        <Image src={`${mediaUrl}?t=${Date.now()}`} fluid />
                     </Modal.Body>
                 </Modal>
             </>

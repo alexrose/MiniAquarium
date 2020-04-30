@@ -1,3 +1,5 @@
+import { toast } from "react-toastify";
+
 /** Settings */
 export function getSettings() {
     return { type: 'GET_SETTINGS' };
@@ -22,6 +24,12 @@ export function getSettingOnOff(url) {
 }
 
 export function updateSettingsStatus(data) {
+    if (data.status === "success") {
+        toast.success(data.message);
+    } else {
+        toast.warn(data.message);
+    }
+
     return { type: 'UPDATE_SETTINGS_STATUS', payload: data };
 }
 
