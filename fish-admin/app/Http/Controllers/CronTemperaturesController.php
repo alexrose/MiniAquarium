@@ -11,8 +11,14 @@ class CronTemperaturesController extends Controller
 {
     use SettingsTrait, GuzzleTrait;
 
+    protected $active = true;
+
     public function run()
     {
+        if(!$this->active) {
+            die();
+        }
+
         $baseURL = $this->getBaseUrl();
         $data = $this->getData($baseURL);
 
