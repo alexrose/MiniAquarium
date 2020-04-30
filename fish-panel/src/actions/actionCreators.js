@@ -1,13 +1,13 @@
+/** Settings */
 export function getSettings() {
-    console.log("HIT[1-settings]: action/actionCreator.js");
     return { type: 'GET_SETTINGS' };
 }
 
 export function updateSettings(data) {
-    console.log("HIT[3-settings]: action/actionCreator.js");
     return { type: 'UPDATE_SETTINGS', payload: data };
 }
 
+/** Temperature */
 export function getTemperatures() {
     return { type: 'GET_TEMPERATURES' };
 }
@@ -15,3 +15,13 @@ export function getTemperatures() {
 export function updateTemperatures(data) {
     return { type: 'UPDATE_TEMPERATURES', payload: data };
 }
+
+/** Settings */
+export function getSettingOnOff(url) {
+    return { type: 'GET_SETTING_ON_OFF', url };
+}
+
+export function updateSettingsStatus(data) {
+    return { type: 'UPDATE_SETTINGS_STATUS', payload: data };
+}
+

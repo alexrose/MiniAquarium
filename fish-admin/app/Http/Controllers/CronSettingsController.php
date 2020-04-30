@@ -69,7 +69,7 @@ class CronSettingsController extends Controller
                     $output[] = array(
                         'name' => $setting->name,
                         'value' => $baseURL.$setting->value,
-                        'type' => 'media/'.$setting->name
+                        'type' => 'media'
                     );
                 }
             }

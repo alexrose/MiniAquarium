@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { updateSettings } from "./../actions/actionCreators";
+import {getTemperatures, updateSettings} from "./../actions/actionCreators";
 import { takeLatest, call, put } from 'redux-saga/effects';
 import * as Constants from '../constants'
 
@@ -29,7 +29,8 @@ function* loginEffectSaga() {
             data = JSON.parse(localStorage.getItem('settings'));
             yield put(updateSettings(data));
         }
-        console.log("HIT[2]: saga/settingsWatcher", data);
+        // Get temperatures
+        yield put(getTemperatures());
     } catch (e) {
         console.log("[Critical]", e);
     }

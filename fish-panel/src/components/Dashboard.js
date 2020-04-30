@@ -1,47 +1,58 @@
-import React, { Component } from 'react'
-import { connect } from 'react-redux';
-import { getSettings, getTemperatures } from './../actions/actionCreators';
-import { bindActionCreators } from 'redux';
+import React, {Component} from 'react'
+import {connect} from 'react-redux';
+import {getSettings, getSettingOnOff} from './../actions/actionCreators';
+import {bindActionCreators} from 'redux';
 
+import RenderChart from "./RenderChart";
+import RenderMedia from "./RenderMedia";
 import RenderButtons from "./RenderButtons";
 
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
+import Alert from "react-bootstrap/Alert";
 import Navbar from 'react-bootstrap/Navbar';
 import Button from "react-bootstrap/Button";
 import Container from 'react-bootstrap/Container';
 import Breadcrumb from 'react-bootstrap/Breadcrumb';
 import ButtonGroup from "react-bootstrap/ButtonGroup";
-import Alert from "react-bootstrap/Alert";
-import RenderChart from "./RenderChart";
-
 
 class Dashboard extends Component {
     constructor(props) {
         super(props);
-        this.state = {
-            mediaUrl: ""
-        }
 
-        this.updateMediaUrl = this.updateMediaUrl.bind(this);
+        this.state = {
+            mediaUrl: '',
+            showModal: false
+        };
+
+        this.callBaby = this.callBaby.bind(this);
+        this.callMedia = this.callMedia.bind(this);
+        this.closeMediaModal = this.closeMediaModal.bind(this);
     }
 
     componentDidMount() {
         this.props.getSettings();
-        this.props.getTemperatures();
-    }
-
-    updateMediaUrl(url) {
-        this.setState({
-            mediaUrl: url
-        });
     }
 
     callBaby(url) {
-        console.log(url);
+        this.props.getSettingOnOff(url);
     }
 
-    generateButtons(allSettings, type, local) {
+    callMedia(url) {
+        this.setState({
+            mediaUrl: url,
+            showModal: true
+        });
+    }
+
+    closeMediaModal() {
+        this.setState({
+            mediaUrl: 'url',
+            showModal: false
+        });
+    }
+
+    generateButtons(allSettings, type, media) {
         let typeSettings = allSettings.filter((item) => {
             return item.type === type
         });
@@ -51,22 +62,23 @@ class Dashboard extends Component {
                 {typeSettings.map((item, index) => <RenderButtons
                     data={item}
                     key={item.name}
-                    local={local}
-                    callOnClick={this.callBaby}
+                    media={media}
+                    callOnClick={media ? this.callMedia : this.callBaby}
                 />)}
             </ButtonGroup>
         )
     }
 
     render() {
-        let { allSettings } = this.props;
-        let { temperatures } = this.props;
+        let {allSettings, temperatures, settingStatus} = this.props;
+        let {showModal, mediaUrl} = this.state;
 
         return (
             <Container fluid>
                 <Navbar bg="dark" variant="dark">
                     <Navbar.Brand href="#">
-                        <img alt='' src="/assets/logo512.png" width="30" height="30" className="d-inline-block align-top"/>
+                        <img alt='' src="/assets/logo512.png" width="30" height="30"
+                             className="d-inline-block align-top"/>
                         {' CyboFish Panel '}
                     </Navbar.Brand>
                 </Navbar>
@@ -75,8 +87,7 @@ class Dashboard extends Component {
                         <Row>
                             <Col xs={6} className="p-0 m-0">
                                 <ButtonGroup>
-                                    <Button variant="outline-secondary" size="sm">Image</Button>
-                                    <Button variant="outline-secondary" size="sm">Video</Button>
+                                    {allSettings.length > 0 ? this.generateButtons(allSettings, 'media', true) : "Loading"}
                                 </ButtonGroup>
                             </Col>
                             <Col xs={6} className="p-0 m-0">
@@ -123,6 +134,8 @@ class Dashboard extends Component {
                         </Col>
                     </Row>
                 </Container>
+
+                <RenderMedia show={showModal} mediaUrl={mediaUrl} handleClose={this.closeMediaModal} />
             </Container>
 
         )
@@ -133,9 +146,11 @@ class Dashboard extends Component {
 const mapStateToProps = (state) => {
     return {
         allSettings: state.settingsData.allSettings,
-        temperatures: state.temperaturesData.temperatures
+        temperatures: state.temperaturesData.temperatures,
+        settingStatus: state.settingsData.settingStatus
     }
 }
-const mapDispatchToProps = dispatch => bindActionCreators({ getSettings, getTemperatures }, dispatch);
+
+const mapDispatchToProps = dispatch => bindActionCreators({getSettings, getSettingOnOff}, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(Dashboard);
