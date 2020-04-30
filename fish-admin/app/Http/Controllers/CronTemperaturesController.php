@@ -34,13 +34,6 @@ class CronTemperaturesController extends Controller
                 ->orderBy('created_at', 'ASC')
                 ->get();
 
-            $temperaturesDay = Temperature::whereDate("created_at", $currentDate->toDateString())
-                ->whereTime('created_at', '>=', Carbon::parse('07:00'))
-                ->whereTime('created_at', '<=', Carbon::parse('23:59'))
-                ->where('value', '>' , 0)
-                ->orderBy('created_at', 'ASC')
-                ->get();
-
             foreach ($temperaturesNight as $key => $temperature) {
                 $night[] = array(
                     "id" => $key,
@@ -48,6 +41,13 @@ class CronTemperaturesController extends Controller
                     "temperature" => number_format($temperature->value, 2)
                 );
             }
+
+            $temperaturesDay = Temperature::whereDate("created_at", $currentDate->toDateString())
+                ->whereTime('created_at', '>=', Carbon::parse('07:00'))
+                ->whereTime('created_at', '<=', Carbon::parse('23:59'))
+                ->where('value', '>' , 0)
+                ->orderBy('created_at', 'ASC')
+                ->get();
 
             foreach ($temperaturesDay as $key => $temperature) {
                 $day[] = array(
@@ -57,7 +57,10 @@ class CronTemperaturesController extends Controller
                 );
             }
 
-            return response()->json(json_decode(json_encode(['day' => $day, 'night' => $night])));
+            return response()->json(json_decode(json_encode([
+                'day' => $day,
+                'night' => $night
+            ])));
 
         } catch (\Exception $exception) {
             $output = ['message' => $exception->getMessage()];

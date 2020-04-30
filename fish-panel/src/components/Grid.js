@@ -102,13 +102,23 @@ class Grid extends Component {
                     <Row>
                         <Col lg={6}>
                             <Alert variant="warning">
-                                {temperatures.night ? <RenderChart data={temperatures} time="night" /> : ("")}
+                                {temperatures.night ? <RenderChart
+                                    data={temperatures.night}
+                                    name="Night temperature"
+                                    xKey="time"
+                                    yKey="temperature"
+                                /> : ("")}
                             </Alert>
                         </Col>
 
                         <Col lg={6}>
                             <Alert variant="warning">
-                                {temperatures.day ? <RenderChart data={temperatures} time="day" /> : ("")}
+                                {temperatures.day ? <RenderChart
+                                    data={temperatures.day}
+                                    name="Day temperature"
+                                    xKey="time"
+                                    yKey="temperature"
+                                /> : ("")}
                             </Alert>
                         </Col>
                     </Row>
