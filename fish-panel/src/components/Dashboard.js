@@ -16,7 +16,7 @@ import Alert from "react-bootstrap/Alert";
 import RenderChart from "./RenderChart";
 
 
-class Grid extends Component {
+class Dashboard extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -129,7 +129,7 @@ class Grid extends Component {
     }
 }
 
-// export default connect()(Grid);
+// export default connect()(Dashboard);
 const mapStateToProps = (state) => {
     return {
         allSettings: state.settingsData.allSettings,
@@ -138,4 +138,4 @@ const mapStateToProps = (state) => {
 }
 const mapDispatchToProps = dispatch => bindActionCreators({ getSettings, getTemperatures }, dispatch);
 
-export default connect(mapStateToProps, mapDispatchToProps)(Grid);
+export default connect(mapStateToProps, mapDispatchToProps)(Dashboard);
