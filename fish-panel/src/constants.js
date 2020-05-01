@@ -1,5 +1,5 @@
 // backend api url
-export const backendUrl = 'http://fish.itcv.ro/api/settings';
+export const backendUrl = 'http://localhost/api/settings';
 
 // button types
 export const mediaType = 'media';
