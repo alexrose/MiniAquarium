@@ -10,7 +10,7 @@ class Temperature extends Model
         'value'
     ];
 
-    public function getUpdatedAtAttribute($value)
+    public function getTimeAttribute($value)
     {
         $value = Carbon::parse($value);
         return $value->format('H:i');
