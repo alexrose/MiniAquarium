@@ -21,11 +21,11 @@ class CronSettingsController extends Controller
         $baseURL = $this->getBaseUrl();
         $data = $this->getData($baseURL);
 
-        if ($data->status == "success") {
+        if ($data->status === 'success') {
             foreach ($data->url as $settingName => $settingValue) {
                 Setting::updateOrCreate(
-                    ["name" => $settingName],
-                    ["name" => $settingName, "value" => $settingValue]
+                    ['name' => $settingName],
+                    ['name' => $settingName, 'value' => $settingValue]
                 );
             }
         } else {
@@ -40,32 +40,32 @@ class CronSettingsController extends Controller
 
         if($settings) {
             foreach ($settings as $key => $setting) {
-                if (strpos(strtolower($setting->name), "air") !== false) {
+                if (strpos(strtolower($setting->name), 'air') !== false) {
                     $output[] = array(
                         'id' => $key,
                         'name' => $setting->name,
                         'value' => $baseURL.$setting->value,
                         'type' => 'air'
                     );
-                } elseif (strpos(strtolower($setting->name), "filter") !== false) {
+                } elseif (strpos(strtolower($setting->name), 'filter') !== false) {
                     $output[] = array(
                         'name' => $setting->name,
                         'value' => $baseURL.$setting->value,
                         'type' => 'filter'
                     );
-                } elseif (strpos(strtolower($setting->name), "light") !== false) {
+                } elseif (strpos(strtolower($setting->name), 'light') !== false) {
                     $output[] = array(
                         'name' => $setting->name,
                         'value' => $baseURL.$setting->value,
                         'type' => 'light'
                     );
-                } elseif (strpos(strtolower($setting->name), "temperature") !== false) {
+                } elseif (strpos(strtolower($setting->name), 'temperature') !== false) {
                     $output[] = array(
                         'name' => $setting->name,
                         'value' => $setting->value,
                         'type' => 'temperature'
                     );
-                } elseif ($setting->name != "base") {
+                } elseif ($setting->name != 'base') {
                     $output[] = array(
                         'name' => $setting->name,
                         'value' => $baseURL.$setting->value,

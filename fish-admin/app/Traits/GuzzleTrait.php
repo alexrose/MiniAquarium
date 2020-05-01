@@ -5,6 +5,10 @@ use GuzzleHttp\Client;
 
 trait GuzzleTrait
 {
+    /**
+     * @param $baseURL
+     * @return mixed
+     */
     public function getData($baseURL)
     {
         try{
@@ -17,8 +21,8 @@ trait GuzzleTrait
             }
         } catch (\Exception $exception){
             return json_decode(json_encode([
-                "status" => "error",
-                "message" => $exception->getMessage()
+                'status' => 'error',
+                'message' => $exception->getMessage()
             ]));
         }
     }

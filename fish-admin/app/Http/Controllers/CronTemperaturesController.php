@@ -22,8 +22,8 @@ class CronTemperaturesController extends Controller
         $baseURL = $this->getBaseUrl();
         $data = $this->getData($baseURL);
 
-        if ($data->status == "success") {
-            Temperature::create(["value" => $data->temperature]);
+        if ($data->status === 'success') {
+            Temperature::create(['value' => $data->temperature]);
         } else {
             return $data->message;
         }
@@ -33,44 +33,35 @@ class CronTemperaturesController extends Controller
     {
         try {
             $currentDate = $this->getDate($date);
-            $temperaturesNight = Temperature::whereDate("created_at", $currentDate->toDateString())
-                ->whereTime('created_at', '>=', Carbon::parse('00:00'))
-                ->whereTime('created_at', '<=', Carbon::parse('07:00'))
-                ->where('value', '>' , 0)
-                ->orderBy('created_at', 'ASC')
-                ->get();
 
-            foreach ($temperaturesNight as $key => $temperature) {
-                $night[] = array(
-                    "id" => $key,
-                    "time" => $temperature->created_at->format("H:i"),
-                    "temperature" => number_format($temperature->value, 2)
-                );
-            }
-
-            $temperaturesDay = Temperature::whereDate("created_at", $currentDate->toDateString())
-                ->whereTime('created_at', '>=', Carbon::parse('07:00'))
-                ->whereTime('created_at', '<=', Carbon::parse('23:59'))
-                ->where('value', '>' , 0)
-                ->orderBy('created_at', 'ASC')
-                ->get();
-
-            foreach ($temperaturesDay as $key => $temperature) {
-                $day[] = array(
-                    "id" => $key,
-                    "time" => $temperature->created_at->format("H:i"),
-                    "temperature" => number_format($temperature->value, 2)
-                );
-            }
+            $temperaturesNight = $this->getSqlData($currentDate, '00:00', '06:59');
+            $temperaturesDay = $this->getSqlData($currentDate, '07:00', '23:59');
 
             return response()->json(json_decode(json_encode([
-                'day' => $day,
-                'night' => $night
+                'day' => $temperaturesDay,
+                'night' => $temperaturesNight
             ])));
 
         } catch (\Exception $exception) {
             $output = ['message' => $exception->getMessage()];
             return response()->json(json_decode(json_encode($output)));
         }
+    }
+
+    /**
+     * @param Carbon $currentDate
+     * @param $hourStart
+     * @param $hourEnd
+     * @return array
+     */
+    private function getSqlData(Carbon $currentDate, $hourStart, $hourEnd)
+    {
+        return Temperature::whereDate('created_at', $currentDate->toDateString())
+            ->whereTime('created_at', '>=', Carbon::parse($hourStart))
+            ->whereTime('created_at', '<=', Carbon::parse($hourEnd))
+            ->where('value', '>', 0)
+            ->orderBy('created_at', 'ASC')
+            ->get(['id', 'updated_at AS time', 'value AS temperature'])
+            ->toArray();
     }
 }
