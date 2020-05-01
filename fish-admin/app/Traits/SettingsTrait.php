@@ -41,4 +41,35 @@ trait SettingsTrait
         return $date;
     }
 
+
+    /**
+     * @param $date
+     * @return Carbon
+     * @throws \Exception
+     */
+    public function getNextDate($date): Carbon
+    {
+        $timeZone = env('APP_TIMEZONE');
+        $now = Carbon::now($timeZone);
+        $nextDate = new Carbon($date);
+
+
+        if($nextDate->format('Y-m-d') === $now->format('Y-m-d')) {
+            return $nextDate;
+        } else {
+            return $nextDate->addDays(1);
+        }
+    }
+
+    /**
+     * @param $date
+     * @return Carbon
+     * @throws \Exception
+     */
+    public function getPreviousDate($date): Carbon
+    {
+        $prevDate = new Carbon($date);
+        return $prevDate->addDays(-1);
+    }
+
 }

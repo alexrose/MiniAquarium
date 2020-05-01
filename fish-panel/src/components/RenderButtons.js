@@ -5,8 +5,8 @@ import {airType, filterType, lightType, mediaType, temperatureType} from "../con
 
 class RenderButtons extends Component {
     render() {
-        let {name, value, type, callOnClick} = this.props;
-        let { size, variant } = '';
+        let {name, value, type, param, callOnClick} = this.props;
+        let size, variant = '';
 
         switch (type) {
             case mediaType:
@@ -27,8 +27,8 @@ class RenderButtons extends Component {
         }
 
         return (
-            <Button size={size} variant={variant} onClick={() => {callOnClick(value, type)}}>
-                {Lodash.startCase(name)}
+            <Button size={size} variant={variant} onClick={() => {callOnClick(value, type, param)}}>
+                {(name === '<' || name === '>') ? name : Lodash.startCase(name)}
             </Button>
         )
     }

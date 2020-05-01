@@ -45,7 +45,11 @@ class CronTemperaturesController extends Controller
             $temperaturesDay = $this->getSqlData($currentDate, '07:00', '23:59');
 
             return response()->json(json_decode(json_encode([
-                'date' => $currentDate->format("Y-m-d"),
+                'dates' => [
+                    'next' => $this->getNextDate($currentDate)->format('Y-m-d'),
+                    'prev' => $this->getPreviousDate($currentDate)->format('Y-m-d'),
+                    'current' => $currentDate->format("Y-m-d")
+                ],
                 'day' => $temperaturesDay,
                 'night' => $temperaturesNight
             ])));

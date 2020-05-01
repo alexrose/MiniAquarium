@@ -1,6 +1,6 @@
 import React, {Component} from 'react'
 import {connect} from 'react-redux';
-import {getSettings, getSettingOnOff} from './../actions/actionCreators';
+import {getSettings, getSettingOnOff, getTemperatures} from './../actions/actionCreators';
 import {bindActionCreators} from 'redux';
 
 import RenderChart from './RenderChart';
@@ -11,13 +11,13 @@ import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Alert from 'react-bootstrap/Alert';
 import Navbar from 'react-bootstrap/Navbar';
-import Button from 'react-bootstrap/Button';
 import Container from 'react-bootstrap/Container';
 import Breadcrumb from 'react-bootstrap/Breadcrumb';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 
-import {ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import {ToastContainer} from 'react-toastify';
+
 import {airType, filterType, lightType, mediaType, temperatureType} from "../constants";
 
 class Dashboard extends Component {
@@ -48,11 +48,24 @@ class Dashboard extends Component {
         });
     }
 
-    callTemperature(url) {
+    callTemperature(url, param) {
+        let date = '';
 
+        switch (param) {
+            case 'prev':
+                date = `${this.props.temperatures.dates.prev}`;
+                break;
+            case 'next':
+                date = `${this.props.temperatures.dates.next}`;
+                break;
+            default:
+                date = `${this.props.temperatures.dates.current}`;
+        }
+
+        this.props.getTemperatures(date);
     }
 
-    handleButtonCallback(url, type) {
+    handleButtonCallback(url, type, param) {
         switch(type) {
             case mediaType:
                 this.callMedia(url);
@@ -63,7 +76,7 @@ class Dashboard extends Component {
                 this.callSetting(url);
                 break;
             case temperatureType:
-                this.callTemperature(url);
+                this.callTemperature(url, param);
                 break;
             default:
                 break;
@@ -77,18 +90,19 @@ class Dashboard extends Component {
         });
     }
 
-    generateButtons(allSettings, type) {
+    generateButtons(allSettings, type, name, param) {
         let typeSettings = allSettings.filter((item) => {
             return item.type === type
         });
 
         return (
             <ButtonGroup aria-label={type} className='p-1'>
-                {typeSettings.map((item, index) => <RenderButtons
+                {typeSettings.map((item) => <RenderButtons
                     key={item.name}
-                    name={item.name}
+                    name={name ? name : item.name}
                     type={item.type}
                     value={item.value}
+                    param={param}
                     callOnClick={this.handleButtonCallback}
                 />)}
             </ButtonGroup>
@@ -113,14 +127,15 @@ class Dashboard extends Component {
                         <Row>
                             <Col xs={6} className='p-0 m-0'>
                                 <ButtonGroup>
-                                    {allSettings.length > 0 ? this.generateButtons(allSettings, mediaType) : 'Loading'}
+                                    {allSettings.length > 0 ? this.generateButtons(allSettings, mediaType) : '...'}
                                 </ButtonGroup>
                             </Col>
-                            <Col xs={6} className='p-0 m-0'>
-                                <ButtonGroup className='float-right'>
-                                    <Button variant='outline-secondary' size='sm'> &lt; </Button>
-                                    <Button variant='outline-secondary' size='sm'> &gt; </Button>
-                                </ButtonGroup>
+                            <Col xs={6} className='p-0 m-0 '>
+                                <div className='float-right'>
+                                    {allSettings.length > 0 ? this.generateButtons(allSettings, temperatureType, '<', 'prev') : '...'}
+                                    {allSettings.length > 0 ? this.generateButtons(allSettings, temperatureType, '>', 'next') : '...'}
+                                </div>
+
                             </Col>
                         </Row>
                     </Container>
@@ -130,9 +145,9 @@ class Dashboard extends Component {
                     <Row>
                         <Col>
                             <Alert variant='warning'>
-                                {allSettings.length > 0 ? this.generateButtons(allSettings, airType) : 'Loading'}
-                                {allSettings.length > 0 ? this.generateButtons(allSettings, filterType) : 'Loading'}
-                                {allSettings.length > 0 ? this.generateButtons(allSettings, lightType) : 'Loading'}
+                                {allSettings.length > 0 ? this.generateButtons(allSettings, airType) : '...'}
+                                {allSettings.length > 0 ? this.generateButtons(allSettings, filterType) : '...'}
+                                {allSettings.length > 0 ? this.generateButtons(allSettings, lightType) : '...'}
                             </Alert>
                         </Col>
                     </Row>
@@ -142,19 +157,18 @@ class Dashboard extends Component {
                                 {temperatures.night ? <RenderChart
                                     data={temperatures.night}
                                     name='Night temperature'
-                                    date={temperatures.date}
+                                    date={temperatures.dates.current}
                                     xKey='time'
                                     yKey='temperature'
                                 /> : ('')}
                             </Alert>
                         </Col>
-
                         <Col lg={6}>
                             <Alert variant='warning'>
                                 {temperatures.day ? <RenderChart
                                     data={temperatures.day}
                                     name='Day temperature'
-                                    date={temperatures.date}
+                                    date={temperatures.dates.current}
                                     xKey='time'
                                     yKey='temperature'
                                 /> : ('')}
@@ -179,6 +193,6 @@ const mapStateToProps = (state) => {
     }
 }
 
-const mapDispatchToProps = dispatch => bindActionCreators({getSettings, getSettingOnOff}, dispatch);
+const mapDispatchToProps = dispatch => bindActionCreators({getSettings, getSettingOnOff, getTemperatures}, dispatch);
 
 export default connect(mapStateToProps, mapDispatchToProps)(Dashboard);
