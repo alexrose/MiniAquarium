@@ -1,3 +1,9 @@
+/**
+ * ArduPumps - Alex Trandafir 
+ * www.alextrandafir.ro
+ * 
+ * Board "Arduino Uno"
+ */
 #include <Arduino.h>
 
 #define AIR_PUMP 5
