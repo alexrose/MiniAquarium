@@ -96,7 +96,7 @@ class Dashboard extends Component {
         });
 
         return (
-            <ButtonGroup aria-label={type} className='p-1'>
+            <>
                 {typeSettings.map((item) => <RenderButtons
                     key={item.name}
                     name={name ? name : item.name}
@@ -105,7 +105,7 @@ class Dashboard extends Component {
                     param={param}
                     callOnClick={this.handleButtonCallback}
                 />)}
-            </ButtonGroup>
+            </>
         )
     }
 
@@ -126,14 +126,16 @@ class Dashboard extends Component {
                     <Container fluid>
                         <Row>
                             <Col xs={6} className='p-0 m-0'>
-                                <ButtonGroup>
+                                <ButtonGroup className='p-1'>
                                     {allSettings.length > 0 ? this.generateButtons(allSettings, mediaType) : '...'}
                                 </ButtonGroup>
                             </Col>
                             <Col xs={6} className='p-0 m-0 '>
                                 <div className='float-right'>
-                                    {allSettings.length > 0 ? this.generateButtons(allSettings, temperatureType, '<', 'prev') : '...'}
-                                    {allSettings.length > 0 ? this.generateButtons(allSettings, temperatureType, '>', 'next') : '...'}
+                                    <ButtonGroup>
+                                        {allSettings.length > 0 ? this.generateButtons(allSettings, temperatureType, '<', 'prev') : '...'}
+                                        {allSettings.length > 0 ? this.generateButtons(allSettings, temperatureType, '>', 'next') : '...'}
+                                    </ButtonGroup>
                                 </div>
 
                             </Col>
@@ -145,9 +147,11 @@ class Dashboard extends Component {
                     <Row>
                         <Col>
                             <Alert variant='warning'>
-                                {allSettings.length > 0 ? this.generateButtons(allSettings, airType) : '...'}
-                                {allSettings.length > 0 ? this.generateButtons(allSettings, filterType) : '...'}
-                                {allSettings.length > 0 ? this.generateButtons(allSettings, lightType) : '...'}
+                                <ButtonGroup className='p-1'>
+                                    {allSettings.length > 0 ? this.generateButtons(allSettings, airType) : '...'}
+                                    {allSettings.length > 0 ? this.generateButtons(allSettings, filterType) : '...'}
+                                    {allSettings.length > 0 ? this.generateButtons(allSettings, lightType) : '...'}
+                                </ButtonGroup>
                             </Alert>
                         </Col>
                     </Row>
