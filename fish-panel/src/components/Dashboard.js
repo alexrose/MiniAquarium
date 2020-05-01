@@ -149,7 +149,11 @@ class Dashboard extends Component {
                             <Alert variant='warning'>
                                 <ButtonGroup className='p-1'>
                                     {allSettings.length > 0 ? this.generateButtons(allSettings, airType) : '...'}
+                                </ButtonGroup>
+                                <ButtonGroup className='p-1'>
                                     {allSettings.length > 0 ? this.generateButtons(allSettings, filterType) : '...'}
+                                </ButtonGroup>
+                                <ButtonGroup className='p-1'>
                                     {allSettings.length > 0 ? this.generateButtons(allSettings, lightType) : '...'}
                                 </ButtonGroup>
                             </Alert>
