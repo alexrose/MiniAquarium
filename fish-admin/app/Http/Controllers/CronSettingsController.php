@@ -12,6 +12,9 @@ class CronSettingsController extends Controller
 
     protected $active = true;
 
+    /**
+     * @return mixed
+     */
     public function run()
     {
         if(!$this->active) {
@@ -33,6 +36,9 @@ class CronSettingsController extends Controller
         }
     }
 
+    /**
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function data()
     {
         $baseURL = $this->getBaseUrl();
@@ -74,7 +80,7 @@ class CronSettingsController extends Controller
                 }
             }
         } else {
-            $output = ['message' => 'Setting not present in database.'];
+            $output = ['message' => 'Settings are not present in the database.'];
         }
 
         return response()->json(json_decode(json_encode($output)));

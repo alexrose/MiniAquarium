@@ -13,6 +13,9 @@ class CronTemperaturesController extends Controller
 
     protected $active = true;
 
+    /**
+     * @return mixed
+     */
     public function run()
     {
         if(!$this->active) {
@@ -29,6 +32,10 @@ class CronTemperaturesController extends Controller
         }
     }
 
+    /**
+     * @param null $date
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function data($date = null)
     {
         try {
