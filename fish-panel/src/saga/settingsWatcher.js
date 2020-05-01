@@ -1,7 +1,8 @@
 import axios from 'axios';
-import {getTemperatures, updateSettings} from "./../actions/actionCreators";
+import {getTemperatures, updateSettings} from './../actions/actionCreators';
 import { takeLatest, call, put } from 'redux-saga/effects';
 import * as Constants from '../constants'
+import {GET_SETTINGS} from "../constants";
 
 /** Returns an axios call */
 function getSettingsRequest() {
@@ -30,12 +31,12 @@ function* loginEffectSaga() {
             yield put(updateSettings(data));
         }
         // Get temperatures
-        yield put(getTemperatures());
+        yield put(getTemperatures(new Date().toISOString().split('T')[0]));
     } catch (e) {
-        console.log("[Critical]", e);
+        console.log('[Critical]', e);
     }
 }
 /** Saga watcher triggered when dispatching action of type 'GET_SETTINGS */
 export function* getSettingsWatcher() {
-    yield takeLatest('GET_SETTINGS', loginEffectSaga);
+    yield takeLatest(GET_SETTINGS, loginEffectSaga);
 }

@@ -1,6 +1,6 @@
-import {combineReducers} from "redux";
-import settingsReducer from "./settingsReducer";
-import temperaturesReducer from "./temperaturesReducer";
+import {combineReducers} from 'redux';
+import settingsReducer from './settingsReducer';
+import temperaturesReducer from './temperaturesReducer';
 
 const rootReducer = combineReducers({
     settingsData: settingsReducer,

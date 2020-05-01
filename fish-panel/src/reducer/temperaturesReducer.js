@@ -1,6 +1,8 @@
+import {UPDATE_TEMPERATURES} from "../constants";
+
 const temperaturesReducer = (state = { temperatures: [] }, action) => {
     switch (action.type) {
-        case "UPDATE_TEMPERATURES":
+        case UPDATE_TEMPERATURES:
             return Object.assign({}, state, {
                 temperatures: action.payload
             })

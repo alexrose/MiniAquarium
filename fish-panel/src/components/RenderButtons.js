@@ -1,18 +1,38 @@
-import React  from 'react';
+import React, {Component} from 'react';
 import Button from 'react-bootstrap/Button';
 import Lodash from 'lodash';
+import {airType, filterType, lightType, mediaType, temperatureType} from "../constants";
 
-function RenderButtons(props) {
-    let { name, value } = props.data;
-    let variant = (name.includes('Off')) ? 'secondary' : 'success';
-    let size = "";
-    if (props.media) {
-        variant = 'outline-secondary';
-        size = 'sm';
+class RenderButtons extends Component {
+    render() {
+        let {name, value, type, callOnClick} = this.props;
+        let { size, variant } = '';
+
+        switch (type) {
+            case mediaType:
+            case temperatureType:
+                size = 'sm';
+                variant = 'outline-secondary';
+                break;
+            case airType:
+            case lightType:
+            case filterType:
+                size = '';
+                variant = (name.includes('Off')) ? 'secondary' : 'success';
+                break;
+            default:
+                size = 'sm';
+                variant = 'success';
+                break;
+        }
+
+        return (
+            <Button size={size} variant={variant} onClick={() => {callOnClick(value, type)}}>
+                {Lodash.startCase(name)}
+            </Button>
+        )
     }
-
-    return (
-        <Button size={size} variant={variant} onClick={() => { props.callOnClick(value) }}>{Lodash.startCase(name)}</Button>
-    )
 }
+
 export default RenderButtons;
+
