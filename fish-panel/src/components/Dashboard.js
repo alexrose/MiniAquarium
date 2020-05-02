@@ -114,7 +114,7 @@ class Dashboard extends Component {
         let {showModal, mediaUrl} = this.state;
 
         return (
-            <Container fluid>
+            <Container fluid className='p-0'>
                 <Navbar bg='dark' variant='dark'>
                     <Navbar.Brand href='#'>
                         <img alt='' src='assets/android-chrome-192x192.png' width='48' height='48'
@@ -143,7 +143,7 @@ class Dashboard extends Component {
                     </Container>
                 </Breadcrumb>
 
-                <Container fluid className='m-0 p-0'>
+                <Container fluid>
                     <Row>
                         <Col>
                             <Alert variant='warning'>
