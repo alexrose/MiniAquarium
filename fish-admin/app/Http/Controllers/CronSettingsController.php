@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use App\Traits\SettingsTrait;
 use App\Traits\GuzzleTrait;
+use Illuminate\Http\JsonResponse;
 
 class CronSettingsController extends Controller
 {
@@ -37,7 +38,7 @@ class CronSettingsController extends Controller
     }
 
     /**
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function data()
     {

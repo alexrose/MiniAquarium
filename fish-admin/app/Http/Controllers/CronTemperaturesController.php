@@ -6,6 +6,7 @@ use App\Models\Temperature;
 use App\Traits\GuzzleTrait;
 use App\Traits\SettingsTrait;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 
 class CronTemperaturesController extends Controller
 {
@@ -34,7 +35,7 @@ class CronTemperaturesController extends Controller
 
     /**
      * @param null $date
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function data($date = null)
     {

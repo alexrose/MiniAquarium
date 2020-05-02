@@ -3,6 +3,7 @@ namespace App\Traits;
 
 use App\Models\Setting;
 use Carbon\Carbon;
+use Exception;
 
 trait SettingsTrait
 {
@@ -33,7 +34,7 @@ trait SettingsTrait
         } else {
             try {
                 $date = Carbon::createFromFormat('Y-m-d', $date, $timeZone);
-            } catch (\Exception $exception) {
+            } catch (Exception $exception) {
                 $date = Carbon::now($timeZone);
             }
         }
@@ -45,31 +46,28 @@ trait SettingsTrait
     /**
      * @param $date
      * @return Carbon
-     * @throws \Exception
+     * @throws Exception
      */
     public function getNextDate($date): Carbon
     {
         $timeZone = env('APP_TIMEZONE');
         $now = Carbon::now($timeZone);
-        $nextDate = new Carbon($date);
 
-
-        if($nextDate->format('Y-m-d') === $now->format('Y-m-d')) {
-            return $nextDate;
+        if($date->format('Y-m-d') === $now->format('Y-m-d')) {
+            return $date;
         } else {
-            return $nextDate->addDays(1);
+            return $date->copy()->addDays(+1);
         }
     }
 
     /**
      * @param $date
      * @return Carbon
-     * @throws \Exception
+     * @throws Exception
      */
     public function getPreviousDate($date): Carbon
     {
-        $prevDate = new Carbon($date);
-        return $prevDate->addDays(-1);
+        return $date->copy()->addDays(-1);
     }
 
 }
