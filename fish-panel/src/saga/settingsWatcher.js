@@ -12,6 +12,17 @@ function getSettingsRequest() {
     });
 }
 
+function getToday() {
+    let d = new Date();
+    let month = '' + (d.getMonth() + 1);
+    let day = '' + d.getDate();
+    let year = d.getFullYear();
+    month = (month.length < 2) ? `0${month}` : month;
+    day = (day.length < 2) ? `0${day}` : day;
+
+    return [year, month, day].join('-');
+}
+
 /** Saga worker responsible for the side effects */
 function* loginEffectSaga() {
     try {
@@ -30,8 +41,9 @@ function* loginEffectSaga() {
             data = JSON.parse(localStorage.getItem('settings'));
             yield put(updateSettings(data));
         }
+
         // Get temperatures
-        yield put(getTemperatures(new Date().toISOString().split('T')[0]));
+        yield put(getTemperatures(getToday()));
     } catch (e) {
         console.log('[Critical]', e);
     }
