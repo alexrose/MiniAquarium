@@ -11,6 +11,13 @@
 - Power source 9V 1A
 - Resistor 0.25W 4.7KΩ
 
+| Software  | Hardware |
+| ------------- | ------------- |
+| <img src="images/software.png" />  | <img src="images/hardware.png" />  |
+
+
+
+
 #### ArduPumps
 Contains the source files for Arduino Uno, which is used to control the "2 Relay module" and power the Esp32Cam.
 
@@ -65,3 +72,4 @@ _**Installation instructions**_
 - `npm install`
 - `npm run-script build`
 - Copy files from */path/to/fish-panel/build/* to */path/to/laravel/public/panel* directory 
+
