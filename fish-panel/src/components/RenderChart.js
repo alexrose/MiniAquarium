@@ -13,7 +13,7 @@ class RenderChart extends Component {
             if (active) {
                 return (
                     <Alert key='info' variant='info'>
-                        <small><strong>{payload[0].value}°</strong> ({label})</small>
+                        <small><strong>{payload? payload[0].value : ''}°</strong> ({label})</small>
                     </Alert>
                 );
             }
