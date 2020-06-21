@@ -21,6 +21,7 @@
 #include <ArduinoJson.h>
 #include <DallasTemperature.h>
 #include <ESP32_RMT_Driver.h>
+#include <PubSubClient.h>
 
 #define PIN_LED 12
 #define PIN_TEMP 13
@@ -31,6 +32,7 @@ const char* WIFI_SSID = configData.ssid;
 const char* WIFI_PASS = configData.pass;
 
 WebServer server(configData.serverPort);
+PubSubClient client;
 
 static auto loRes = esp32cam::Resolution::find(320, 240);
 static auto hiRes = esp32cam::Resolution::find(640, 480);
@@ -95,115 +97,18 @@ String getStatus(String message)
   data["status"] = "success";
   data["message"] = message;
   data["temperature"] = sensors.getTempCByIndex(0);
-  data["url"]["base"] = String(configData.server);
-  data["url"]["image"] = "/image.jpg";
-  data["url"]["video"] = "/stream.mjpeg";
-  data["url"]["airOn"] = "/air-on";
-  data["url"]["airOff"] = "/air-off";
-  data["url"]["filterOn"] = "/filter-on";
-  data["url"]["filterOff"] = "/filter-off";
-  data["url"]["warmLight"] = "/warm-on";
-  data["url"]["coldLight"] = "/cold-on";
-  data["url"]["partyLight"] = "/party-on";
-  data["url"]["lightOff"] = "/light-off";
+  data["url"]["image"] = String(configData.server) + "/image.jpg";
+  data["url"]["video"] = String(configData.server) + "/stream.mjpeg";
   
   serializeJson(data, jsonString);
   return jsonString;
 }
 
-/** Web page: render image(default) */
+/** Web page: render default */
 void handleDefaultPage()
 {
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", getStatus(""));
-}
-
-/** Web page: turn on lights(warn) & render video */
-void handleWarmLight()
-{
-  ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, 0xfafa49, 1000, NO_OPTIONS);
-  ledsBar.start();
-
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "application/json", getStatus("Warm light is on."));
-}
-
-/** Web page: turn on lights(cold) & render video */
-void handleColdLight()
-{
-  ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, WHITE, 1000, NO_OPTIONS);
-  ledsBar.start();
-
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "application/json", getStatus("Cold light is on."));
-}
-
-/** Web page: turn on lights(party) & render video */
-void handlePartyLight()
-{
-  ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_RAINBOW_CYCLE, BLUE, 512, NO_OPTIONS);
-  ledsBar.start();
-
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "application/json", getStatus("Party lights are on."));
-}
-
-/** Web page: turn onf lights & render video */
-void handleLightOff()
-{
-  ledsBar.stop();
-
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "application/json", getStatus("Lights are off."));
-}
-
-/** Web page: turn air pump on & render video */
-void handleAirOn()
-{
-  while(Serial.availableForWrite()) {
-    Serial.write("fishcam:air:on"); 
-    break;
-  }
-  
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "application/json", getStatus("Air pump is on."));
-}
-
-/** Web page: turn air pump off & render video */
-void handleAirOff()
-{
-  while(Serial.availableForWrite()) {
-    Serial.write("fishcam:air:off"); 
-    break;
-  }
-
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "application/json", getStatus("Air pump is off."));
-}
-
-/** Web page: turn water filter on & render video */
-void handleFilterOn()
-{
-  while(Serial.availableForWrite()) {
-    Serial.write("fishcam:filter:on"); 
-    break;
-  }
-
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "application/json", getStatus("Filter pump is on."));
-}
-
-/** Web page: turn water filter off & render video */
-void handleFilterOff()
-{
-  
-  while(Serial.availableForWrite()) {
-    Serial.write("fishcam:filter:off"); 
-    break;
-  }
-
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "application/json", getStatus("Filter pump is off."));
 }
 
 void handleNotFound()
@@ -218,6 +123,62 @@ void handleNotFound()
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(404, "application/json", jsonString);
 }
+
+/** MQTT Connect */
+void reconnect()
+{
+  while (!client.connected())
+  {
+    if (client.connect(configData.mqttClientId, configData.mqttUser, configData.mqttPass))
+    {
+      client.subscribe(configData.mqttTopic);
+    }
+    else
+    {
+      // Retry connecting after 3 seconds
+      delay(3000);
+    }
+  }
+}
+
+void callback(char *topic, byte *payload, unsigned int length)
+{
+  StaticJsonDocument<BUFFER_SIZE> doc;
+
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+
+  char message[length + 1];
+  for (int i = 0; i < length; i++)
+  {
+    message[i] = (char)payload[i];
+  }
+  message[length] = '\0';
+
+  Serial.println(message);
+
+  DeserializationError error = deserializeJson(doc, message);
+
+  if (error)
+  {
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.c_str());
+    return;
+  }
+
+  JsonObject root = doc.as<JsonObject>();
+
+  if (root.containsKey("brightness"))
+  {
+    byte newBrightness = constrain(root[String("brightness")], 0, 255);
+    analogWrite(LED_PIN, (255 - newBrightness));
+    brightness = newBrightness;
+    Serial.print("Brightness: ");
+    Serial.println(brightness);
+  }
+}
+
 
 void setup()
 {
@@ -258,24 +219,26 @@ void setup()
 
   /** Server */
   server.on("/", handleDefaultPage);
-  server.on("/warm-on", handleWarmLight);
-  server.on("/cold-on", handleColdLight);
-  server.on("/party-on", handlePartyLight);
-  server.on("/light-off", handleLightOff);
-  server.on("/air-on", handleAirOn);
-  server.on("/air-off", handleAirOff);
-  server.on("/filter-on", handleFilterOn);
-  server.on("/filter-off", handleFilterOff);
   server.on("/image.jpg", handleJpeg);
   server.on("/stream.mjpeg", handleMjpeg);
   server.onNotFound(handleNotFound);
 
   server.begin();
+
+  /** MQTT */
+  client.setServer(configData.mqttHost, configData.mqttPort);
+  client.setCallback(callback);
 }
 
 void loop()
 {
   ledsBar.service();
   server.handleClient();
+
+  if (!client.connected()){
+    reconnect();
+  }
+
+  client.loop();
 }
 
