@@ -1,0 +1,69 @@
+apt update && \
+apt -y install mc curl nginx certbot python-certbot-nginx mosquitto mosquitto-clients iptables && \
+update-alternatives --set iptables /usr/sbin/iptables-legacy && \
+update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+
+dpkg-reconfigure tzdata
+// timedatectl set-timezone Europe/Bucharest
+
+
+pico /etc/nginx/sites-available/default
+	>> update servername
+systemctl restart nginx
+certbot --nginx --agree-tos -d my.domain.com
+
+mosquitto_passwd -c /etc/mosquitto/passwd myUsername
+pico /etc/mosquitto/conf.d/default.conf
+	allow_anonymous false
+	password_file /etc/mosquitto/passwd
+
+	listener 1883 localhost
+
+	listener 1884 #external port
+	protocol websockets
+	certfile /etc/letsencrypt/live/my.domain.com/cert.pem
+	cafile /etc/letsencrypt/live/my.domain.com/chain.pem
+	keyfile /etc/letsencrypt/live/my.domain.com/privkey.pem
+systemctl restart mosquitto
+
+apt install python3-pip
+pip3 install paho-mqtt pytz Flask gunicorn flask-cors
+
+pico /etc/systemd/system/cybosockets.service
+	[Unit]
+	Description=CyboFish websockets service
+	After=mosquitto.service
+	StartLimitIntervalSec=0
+
+	[Service]
+	Type=simple
+	Restart=always
+	RestartSec=1
+	ExecStart=/usr/bin/python3 /path/to/websockets/cybofish.py
+
+	[Install]
+	WantedBy=multi-user.target
+
+systemctl start cybosockets
+systemctl enable cybosockets
+
+
+pico /etc/systemd/system/cyboapi.service
+	[Unit]
+	Description=CyboFish API service
+	After=mosquitto.service
+	StartLimitIntervalSec=0
+
+	[Service]
+	Type=simple
+	Restart=always
+	RestartSec=1
+	ExecStart=/usr/local/bin/gunicorn -b my.domain.com:1884 --certfile=/etc/letsencrypt/live/my.domain.com/cert.pem --keyfile=/etc/letsencrypt/live/my.domain.com/privkey.pem --chdir /path/to/cybofish/api app:app
+
+	[Install]
+	WantedBy=multi-user.target
+
+systemctl start cyboapi
+systemctl enable cyboapi
+
+
