@@ -7,9 +7,11 @@ import sqlite3
 
 from settings import timezone, mqttDb
 from flask import Flask, jsonify
+from flask_cors import CORS
 from datetime import datetime, timedelta
 
-app = Flask("cyboapi")
+app = Flask(__name__)
+CORS(app)
 
 #Get temperatures route
 @app.route("/", methods=['GET']) 
@@ -28,14 +30,17 @@ def temperatures(date):
         yesterday = today - timedelta(days=1)
     else:
         current = datetime.strptime(date, '%Y-%m-%d')
-        tomorrow = current + timedelta(days=1)
         yesterday = current - timedelta(days=1)
+
+        if (current.strftime('%Y-%m-%d') == today.strftime('%Y-%m-%d')):
+            tomorrow = today
+        else:
+            tomorrow = current + timedelta(days=1)
 
     sqlQuery = "SELECT * FROM `temperatures` WHERE date >= ? AND date <= ? AND value > 0 ORDER BY `date` ASC"
 
     connect = sqlite3.connect(mqttDb)
     cursor = connect.cursor()
-    connect.set_trace_callback(print)
 
     cursor.execute(sqlQuery, (current.strftime('%Y-%m-%d')+' 07:00:00', current.strftime('%Y-%m-%d')+' 23:59:59'))
     rowsDay = cursor.fetchall()
