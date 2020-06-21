@@ -9,7 +9,7 @@ function getTemperaturesRequest(date) {
         date = getToday();
 
     }
-    console.log(date);
+
     return axios.request({
         method: 'get',
         url: `${temperaturesUrl}/${date}`

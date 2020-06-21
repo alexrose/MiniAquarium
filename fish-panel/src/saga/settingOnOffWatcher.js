@@ -1,33 +1,25 @@
 import { updateSettingOnOff } from '../actions/actionCreators'
 import { takeLatest, call, put } from 'redux-saga/effects';
-import {mqttPort, mqttUrl, mqttPass, mqttUser, mqttTopic, SET_SETTING_ON_OFF} from "../constants";
+import { mqttHost, mqttPass, mqttUser, mqttTopic, SET_SETTING_ON_OFF} from "../constants";
 
-
-/** Returns an axios call */
-function setSettingOnOffRequest(url) {
-
+function setSettingOnOffRequest(param) {
     let mqtt = require('mqtt');
-    let client;
     let options = {
-        host: mqttUrl,
-        port: mqttPort,
+        clientId: 'mqttJs_' + Math.random().toString(16).substr(2, 8),
         username: mqttUser,
-        password: mqttPass,
-        protocol: 'wss',
-        properties: {
-            requestResponseInformation: true
-        }
+        password: mqttPass
     };
-    client = mqtt.connect(options);
 
-    client.publish(mqttTopic, 'Hello mqtt');
-    client.end();
+    let client = mqtt.connect(mqttHost, options);
+    client.publish(mqttTopic, param, { qos: 0, retain: false });
+
+    return {'status' : 'success', 'message': `Request to update setting ${param} sent.`};
 }
 
 /** Saga worker responsible for the side effects */
-function* loginEffectSaga({url}) {
+function* loginEffectSaga({param}) {
     try {
-        let { data } = yield call(setSettingOnOffRequest, url);
+        let data = yield call(setSettingOnOffRequest, param);
         yield put(updateSettingOnOff(data));
 
     } catch (e) {
@@ -38,5 +30,3 @@ function* loginEffectSaga({url}) {
 export function* getSettingOnOffWatcher() {
     yield takeLatest(SET_SETTING_ON_OFF, loginEffectSaga);
 }
-
-

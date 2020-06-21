@@ -16,8 +16,8 @@ export function updateTemperatures(data) {
 }
 
 /** Settings */
-export function setSettingOnOff(url) {
-    return {type: SET_SETTING_ON_OFF, url};
+export function setSettingOnOff(param) {
+    return {type: SET_SETTING_ON_OFF, param};
 }
 
 export function updateSettingOnOff(data) {
