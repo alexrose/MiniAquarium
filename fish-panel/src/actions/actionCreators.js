@@ -1,21 +1,10 @@
 import {toast} from 'react-toastify';
 import {
-    GET_SETTINGS,
-    GET_SETTING_ON_OFF,
+    SET_SETTING_ON_OFF,
     GET_TEMPERATURES,
-    UPDATE_SETTINGS,
-    UPDATE_SETTINGS_STATUS,
+    UPDATE_SETTING_ON_OFF,
     UPDATE_TEMPERATURES
 } from "../constants";
-
-/** Settings */
-export function getSettings() {
-    return {type: GET_SETTINGS};
-}
-
-export function updateSettings(data) {
-    return {type: UPDATE_SETTINGS, payload: data};
-}
 
 /** Temperature */
 export function getTemperatures(data) {
@@ -27,17 +16,17 @@ export function updateTemperatures(data) {
 }
 
 /** Settings */
-export function getSettingOnOff(url) {
-    return {type: GET_SETTING_ON_OFF, url};
+export function setSettingOnOff(url) {
+    return {type: SET_SETTING_ON_OFF, url};
 }
 
-export function updateSettingsStatus(data) {
+export function updateSettingOnOff(data) {
     if (data.status === 'success') {
         toast.success(data.message);
     } else {
         toast.warn(data.message);
     }
 
-    return {type: UPDATE_SETTINGS_STATUS, payload: data};
+    return {type: UPDATE_SETTING_ON_OFF, payload: data};
 }
 

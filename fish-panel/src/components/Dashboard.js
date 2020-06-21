@@ -1,6 +1,6 @@
 import React, {Component} from 'react'
 import {connect} from 'react-redux';
-import {getSettings, getSettingOnOff, getTemperatures} from './../actions/actionCreators';
+import {setSettingOnOff, getTemperatures} from './../actions/actionCreators';
 import {bindActionCreators} from 'redux';
 
 import RenderChart from './RenderChart';
@@ -18,7 +18,7 @@ import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import 'react-toastify/dist/ReactToastify.css';
 import {ToastContainer} from 'react-toastify';
 
-import {airType, filterType, lightType, mediaType, temperatureType} from "../constants";
+import {airType, filterType, lightType, mediaType, temperatureType, imageUrl, videoUrl} from "../constants";
 
 class Dashboard extends Component {
     constructor(props) {
@@ -34,11 +34,11 @@ class Dashboard extends Component {
     }
 
     componentDidMount() {
-        this.props.getSettings();
+        this.props.getTemperatures();
     }
 
-    callSetting(url) {
-        this.props.getSettingOnOff(url);
+    callSetting(param) {
+        this.props.setSettingOnOff(param);
     }
 
     callMedia(url) {
@@ -66,14 +66,14 @@ class Dashboard extends Component {
     }
 
     handleButtonCallback(url, type, param) {
-        switch(type) {
+        switch (type) {
             case mediaType:
                 this.callMedia(url);
                 break;
             case airType:
             case lightType:
             case filterType:
-                this.callSetting(url);
+                this.callSetting(param);
                 break;
             case temperatureType:
                 this.callTemperature(url, param);
@@ -90,27 +90,8 @@ class Dashboard extends Component {
         });
     }
 
-    generateButtons(allSettings, type, name, param) {
-        let typeSettings = allSettings.filter((item) => {
-            return item.type === type
-        });
-
-        return (
-            <>
-                {typeSettings.map((item) => <RenderButtons
-                    key={item.name}
-                    name={name ? name : item.name}
-                    type={item.type}
-                    value={item.value}
-                    param={param}
-                    callOnClick={this.handleButtonCallback}
-                />)}
-            </>
-        )
-    }
-
     render() {
-        let {allSettings, temperatures} = this.props;
+        let {temperatures} = this.props;
         let {showModal, mediaUrl} = this.state;
 
         return (
@@ -118,7 +99,7 @@ class Dashboard extends Component {
                 <Navbar bg='dark' variant='dark'>
                     <Navbar.Brand href='#'>
                         <img alt='' src='assets/android-chrome-192x192.png' width='48' height='48'
-                             className='d-inline-block align-middle' />
+                             className='d-inline-block align-middle'/>
                         {' CyboFish Panel '}
                     </Navbar.Brand>
                 </Navbar>
@@ -127,17 +108,17 @@ class Dashboard extends Component {
                         <Row>
                             <Col xs={6} className='p-0 m-0'>
                                 <ButtonGroup className='p-1'>
-                                    {allSettings.length > 0 ? this.generateButtons(allSettings, mediaType) : '...'}
+                                    <RenderButtons name='Image' type={mediaType} value={imageUrl} param='' callOnClick={this.handleButtonCallback} />
+                                    <RenderButtons name='Video' type={mediaType} value={videoUrl} param='' callOnClick={this.handleButtonCallback} />
                                 </ButtonGroup>
                             </Col>
                             <Col xs={6} className='p-0 m-0 '>
                                 <div className='float-right'>
                                     <ButtonGroup>
-                                        {allSettings.length > 0 ? this.generateButtons(allSettings, temperatureType, '<', 'prev') : '...'}
-                                        {allSettings.length > 0 ? this.generateButtons(allSettings, temperatureType, '>', 'next') : '...'}
+                                        <RenderButtons name='<' type={temperatureType} value='' param='prev' callOnClick={this.handleButtonCallback} />
+                                        <RenderButtons name='>' type={temperatureType} value='' param='next' callOnClick={this.handleButtonCallback} />
                                     </ButtonGroup>
                                 </div>
-
                             </Col>
                         </Row>
                     </Container>
@@ -148,13 +129,18 @@ class Dashboard extends Component {
                         <Col>
                             <Alert variant='warning'>
                                 <ButtonGroup className='p-1'>
-                                    {allSettings.length > 0 ? this.generateButtons(allSettings, airType) : '...'}
+                                    <RenderButtons name='Air On' type={airType} value='' param='air-on' callOnClick={this.handleButtonCallback} />
+                                    <RenderButtons name='Air Off' type={airType} value='' param='air-off' callOnClick={this.handleButtonCallback} />
                                 </ButtonGroup>
                                 <ButtonGroup className='p-1'>
-                                    {allSettings.length > 0 ? this.generateButtons(allSettings, filterType) : '...'}
+                                    <RenderButtons name='Filter On' type={airType} value='' param='filter-on' callOnClick={this.handleButtonCallback} />
+                                    <RenderButtons name='Filter Off' type={airType} value='' param='filter-off' callOnClick={this.handleButtonCallback} />
                                 </ButtonGroup>
                                 <ButtonGroup className='p-1'>
-                                    {allSettings.length > 0 ? this.generateButtons(allSettings, lightType) : '...'}
+                                    <RenderButtons name='Warm Light' type={airType} value='' param='warm-light' callOnClick={this.handleButtonCallback} />
+                                    <RenderButtons name='Cold Light' type={airType} value='' param='cold-light' callOnClick={this.handleButtonCallback} />
+                                    <RenderButtons name='Party Light' type={airType} value='' param='party-light' callOnClick={this.handleButtonCallback} />
+                                    <RenderButtons name='Light Off' type={airType} value='' param='light-off' callOnClick={this.handleButtonCallback} />
                                 </ButtonGroup>
                             </Alert>
                         </Col>
@@ -195,12 +181,15 @@ class Dashboard extends Component {
 // export default connect()(Dashboard);
 const mapStateToProps = (state) => {
     return {
-        allSettings: state.settingsData.allSettings,
-        temperatures: state.temperaturesData.temperatures,
-        settingStatus: state.settingsData.settingStatus
+        temperatures: state.temperaturesData.temperatures
     }
 }
 
-const mapDispatchToProps = dispatch => bindActionCreators({getSettings, getSettingOnOff, getTemperatures}, dispatch);
+const mapDispatchToProps = dispatch => {
+    return bindActionCreators({
+        "setSettingOnOff": setSettingOnOff,
+        "getTemperatures": getTemperatures
+    }, dispatch);
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(Dashboard);

@@ -1,12 +1,8 @@
-import {UPDATE_SETTINGS, UPDATE_SETTINGS_STATUS} from "../constants";
+import {UPDATE_SETTING_ON_OFF} from "../constants";
 
 const settingsReducer = (state = { allSettings: [] }, action) => {
     switch (action.type) {
-        case UPDATE_SETTINGS:
-            return Object.assign({}, state, {
-                allSettings: [...action.payload]
-            })
-        case UPDATE_SETTINGS_STATUS:
+        case UPDATE_SETTING_ON_OFF:
             return Object.assign({}, state, {
                 settingStatus: action.payload
             })

@@ -1,19 +1,30 @@
 import axios from 'axios';
 import { updateTemperatures } from '../actions/actionCreators'
 import { takeLatest, call, put } from 'redux-saga/effects';
-import {GET_TEMPERATURES} from "../constants";
+import {GET_TEMPERATURES, temperaturesUrl} from "../constants";
 
 /** Returns an axios call */
 function getTemperaturesRequest(date) {
-    let localSettings = JSON.parse(localStorage.getItem('settings'));
-    let temperaturesUrl = localSettings.filter((item) => {
-        return item.type === 'temperature'
-    });
+    if (date === undefined) {
+        date = getToday();
 
+    }
+    console.log(date);
     return axios.request({
         method: 'get',
-        url: `${temperaturesUrl['0'].value}/${date}`
+        url: `${temperaturesUrl}/${date}`
     });
+}
+
+function getToday() {
+    let d = new Date();
+    let month = '' + (d.getMonth() + 1);
+    let day = '' + d.getDate();
+    let year = d.getFullYear();
+    month = (month.length < 2) ? `0${month}` : month;
+    day = (day.length < 2) ? `0${day}` : day;
+
+    return [year, month, day].join('-');
 }
 
 /** Saga worker responsible for the side effects */
