@@ -1,7 +1,6 @@
 {
   "name": "fish-panel",
-  "homepage":"http://localhost/panel",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "dependencies": {
     "axios": "^0.19.2",
