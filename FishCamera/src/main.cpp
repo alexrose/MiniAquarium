@@ -22,6 +22,7 @@
 #include <DallasTemperature.h>
 #include <ESP32_RMT_Driver.h>
 #include <PubSubClient.h>
+#include <WiFiClientSecure.h>
 
 #define PIN_LED 12
 #define PIN_TEMP 13
@@ -32,7 +33,11 @@ const char* WIFI_SSID = configData.ssid;
 const char* WIFI_PASS = configData.pass;
 
 WebServer server(configData.serverPort);
-PubSubClient client;
+
+/** MQTT */
+WiFiClientSecure espClient;
+PubSubClient mqttClient(espClient);
+unsigned long lastMillis = 0;
 
 static auto loRes = esp32cam::Resolution::find(320, 240);
 static auto hiRes = esp32cam::Resolution::find(640, 480);
@@ -124,61 +129,67 @@ void handleNotFound()
   server.send(404, "application/json", jsonString);
 }
 
-/** MQTT Connect */
-void reconnect()
+void mqttReconnect()
 {
-  while (!client.connected())
+  while (!mqttClient.connected())
   {
-    if (client.connect(configData.mqttClientId, configData.mqttUser, configData.mqttPass))
-    {
-      client.subscribe(configData.mqttTopic);
-    }
-    else
-    {
-      // Retry connecting after 3 seconds
+    if (mqttClient.connect(configData.mqttClientId, configData.mqttUser, configData.mqttPass)){
+      Serial.print("Connection state: ");
+      Serial.println(mqttClient.state());
+      mqttClient.subscribe(configData.mqttTopicSettings);
+    } else {
+      Serial.print("Connection failed, rc=");
+      Serial.println(mqttClient.state());
+      
+      // Wait 3 seconds before retrying
       delay(3000);
     }
   }
 }
 
-void callback(char *topic, byte *payload, unsigned int length)
+void mqttCallback(char *topic, byte *payload, unsigned int length) 
 {
-  StaticJsonDocument<BUFFER_SIZE> doc;
-
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-
-  char message[length + 1];
-  for (int i = 0; i < length; i++)
-  {
-    message[i] = (char)payload[i];
-  }
-  message[length] = '\0';
-
-  Serial.println(message);
-
-  DeserializationError error = deserializeJson(doc, message);
-
-  if (error)
-  {
-    Serial.print(F("deserializeJson() failed: "));
-    Serial.println(error.c_str());
-    return;
+  String message;
+  for (int i = 0; i < length; i++){
+    message+= (char)payload[i];
   }
 
-  JsonObject root = doc.as<JsonObject>();
-
-  if (root.containsKey("brightness"))
-  {
-    byte newBrightness = constrain(root[String("brightness")], 0, 255);
-    analogWrite(LED_PIN, (255 - newBrightness));
-    brightness = newBrightness;
-    Serial.print("Brightness: ");
-    Serial.println(brightness);
+  if (message.equals("warm-light")) {
+    ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, 0xfafa49, 1000, NO_OPTIONS);
+    ledsBar.start();
+  } else if (message.equals("cold-light")) {
+    ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_STATIC, WHITE, 1000, NO_OPTIONS);
+    ledsBar.start();
+  } else if (message.equals("party-light")) {
+    ledsBar.setSegment(0, ledStart, ledStop, FX_MODE_RAINBOW_CYCLE, BLUE, 512, NO_OPTIONS);
+    ledsBar.start();
+  } else if (message.equals("light-off")) {
+    ledsBar.stop();
+  } else if (message.equals("air-on")) {
+    while(Serial.availableForWrite()) {
+      Serial.write("fishcam:air:on"); 
+      break;
+    }
+  } else if (message.equals("air-off")) {
+    while(Serial.availableForWrite()) {
+      Serial.write("fishcam:air:off"); 
+      break;
+    }
+  } else if (message.equals("filter-on")) {
+    while(Serial.availableForWrite()) {
+      Serial.write("fishcam:filter:on"); 
+      break;
+    }
+  } else if (message.equals("filter-off")) {
+    while(Serial.availableForWrite()) {
+      Serial.write("fishcam:filter:off"); 
+      break;
+    }
+  } else {
+    // Have a break.
   }
+  
 }
-
 
 void setup()
 {
@@ -217,6 +228,11 @@ void setup()
     Serial.print(".");
   }
 
+  mqttClient.setServer(configData.mqttHost, configData.mqttPort);
+  mqttClient.setClient(espClient);
+  mqttClient.setCallback(mqttCallback);
+  mqttReconnect();
+
   /** Server */
   server.on("/", handleDefaultPage);
   server.on("/image.jpg", handleJpeg);
@@ -224,21 +240,23 @@ void setup()
   server.onNotFound(handleNotFound);
 
   server.begin();
-
-  /** MQTT */
-  client.setServer(configData.mqttHost, configData.mqttPort);
-  client.setCallback(callback);
 }
 
 void loop()
 {
+  if (!mqttClient.connected()){
+    mqttReconnect();
+  }
+  
+  mqttClient.loop();
   ledsBar.service();
   server.handleClient();
-
-  if (!client.connected()){
-    reconnect();
+  
+  if (millis() - lastMillis > 300000) {
+    lastMillis = millis();
+    static char temp[15];
+    dtostrf(sensors.getTempCByIndex(0),7, 4, temp);
+    mqttClient.publish(configData.mqttTopicTemperature, temp);
   }
-
-  client.loop();
 }
 
