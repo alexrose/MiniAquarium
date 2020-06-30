@@ -18,8 +18,6 @@ export const filterType = 'filter';
 export const temperatureType = 'temperature';
 
 // actions
-export const GET_SETTINGS = 'GET_SETTINGS';
-export const UPDATE_SETTINGS = 'UPDATE_SETTINGS';
 export const GET_TEMPERATURES = 'GET_TEMPERATURES';
 export const UPDATE_TEMPERATURES = 'UPDATE_TEMPERATURES';
 export const SET_SETTING_ON_OFF = 'SET_SETTING_ON_OFF';

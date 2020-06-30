@@ -137,6 +137,12 @@ void mqttReconnect()
       Serial.print("Connection state: ");
       Serial.println(mqttClient.state());
       mqttClient.subscribe(configData.mqttTopicSettings);
+
+      sensors.requestTemperatures(); 
+      static char temp[15];
+      dtostrf(sensors.getTempCByIndex(0),7, 4, temp);
+      mqttClient.publish(configData.mqttTopicTemperature, temp);
+
     } else {
       Serial.print("Connection failed, rc=");
       Serial.println(mqttClient.state());
@@ -255,6 +261,7 @@ void loop()
   if (millis() - lastMillis > 300000) {
     lastMillis = millis();
     static char temp[15];
+    sensors.requestTemperatures(); 
     dtostrf(sensors.getTempCByIndex(0),7, 4, temp);
     mqttClient.publish(configData.mqttTopicTemperature, temp);
   }
