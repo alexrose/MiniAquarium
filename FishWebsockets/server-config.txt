@@ -18,6 +18,11 @@ pico /etc/mosquitto/conf.d/default.conf
 	password_file /etc/mosquitto/passwd
 
 	listener 1883 localhost
+	
+	listener 1885
+	certfile /etc/letsencrypt/live/my.domain.com/cert.pem
+	cafile /etc/letsencrypt/live/my.domain.com/chain.pem
+	keyfile /etc/letsencrypt/live/my.domain.com/privkey.pem
 
 	listener 1884 #external port
 	protocol websockets
